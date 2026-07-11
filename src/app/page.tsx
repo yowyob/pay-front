@@ -1,3 +1,7 @@
+// Rendu dynamique par requête : la page lit ?status/?ref (sinon Next la prérend en statique
+// et affiche toujours l'état par défaut).
+export const dynamic = "force-dynamic";
+
 type Search = { [k: string]: string | string[] | undefined };
 
 const CONTINUE_URL = process.env.NEXT_PUBLIC_CONTINUE_URL || "https://shopping.yowyob.com/";
