@@ -1,0 +1,31 @@
+# Front « Yowyob Pay » (page de résultat de paiement) servi sous
+# kernel-core.yowyob.com/pay (même domaine que le kernel, PathPrefix + priorité haute).
+# Next.js basePath=/pay -> pas de stripprefix.
+services:
+  pay-front:
+    image: "${APP_IMAGE:?APP_IMAGE requis}"
+    container_name: pay-front
+    pull_policy: always
+    restart: unless-stopped
+    environment:
+      NODE_ENV: "production"
+      PORT: "3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/pay >/dev/null 2>&1 || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 15
+      start_period: 40s
+    logging: { driver: "json-file", options: { max-size: "50m", max-file: "5" } }
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pay-front.rule=Host(`kernel-core.yowyob.com`) && PathPrefix(`/pay`)"
+      - "traefik.http.routers.pay-front.entrypoints=websecure"
+      - "traefik.http.routers.pay-front.tls=true"
+      - "traefik.http.routers.pay-front.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.pay-front.priority=200"
+      - "traefik.http.services.pay-front.loadbalancer.server.port=3000"
+      - "traefik.docker.network=yowyob"
+    networks: [yowyob]
+networks:
+  yowyob: { external: true, name: yowyob }
