@@ -11,7 +11,6 @@ services:
       IWM_API_BASE_URL: "https://kernel-core.yowyob.com/kernel-api"
       IWM_CLIENT_ID: "yy-pay"
       IWM_API_KEY: "${IWM_API_KEY:?}"
-      IWM_TENANT_ID: "11111111-1111-1111-1111-111111111111"
       PAYMENT_PAYER_REFERENCE: "+237611223344"
       COOKIE_ACCESS_TOKEN: "yy_pay_access_token"
       COOKIE_REFRESH_TOKEN: "yy_pay_refresh_token"
