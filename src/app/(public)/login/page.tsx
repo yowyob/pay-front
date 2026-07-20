@@ -76,7 +76,7 @@ function LoginPageContent() {
     setLoading(true);
     try {
       const result = await bffPostEnvelope<DiscoverLoginContextsResponse>(
-        "/api/auth/discover-contexts",
+        "/pay/api/auth/discover-contexts",
         { principal, password: secret },
       );
       const data = result.data;

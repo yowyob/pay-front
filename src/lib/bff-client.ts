@@ -5,16 +5,6 @@ type ApiEnvelope<T> = {
   errorCode?: string;
 };
 
-
-const BFF_BASE_PATH = "/pay";
-
-function resolveBffPath(path: string): string {
-  if (!path.startsWith("/api/")) {
-    return path;
-  }
-  return `${BFF_BASE_PATH}${path}`;
-}
-
 export class BffError extends Error {
   status: number;
   errorCode?: string;
@@ -30,7 +20,7 @@ export async function bffFetch<T>(
   path: string,
   init?: RequestInit,
 ): Promise<T> {
-  const response = await fetch(resolveBffPath(path), {
+  const response = await fetch(path, {
     ...init,
     credentials: "include",
     headers: {
@@ -79,7 +69,7 @@ export async function bffPostEnvelope<T>(
   path: string,
   payload?: unknown,
 ): Promise<{ success?: boolean; data?: T; message?: string; errorCode?: string }> {
-  const response = await fetch(resolveBffPath(path), {
+  const response = await fetch(path, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
