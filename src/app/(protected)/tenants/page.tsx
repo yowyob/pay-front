@@ -80,8 +80,9 @@ function TenantsPageContent() {
   async function selectTenant(option: TenantOption, selectionToken?: string) {
     setSelecting(option.tenantId);
     try {
-      await bffPost("/api/auth/select-tenant", {
-        tenantId: option.tenantId,
+      await bffPost("/api/auth/select-context", {
+        selectionToken:
+          selectionToken || useAuthWizardStore.getState().selectionToken,
         contextId: option.contextId,
       });
       setSelectedContext(option.contextId, option.tenantId);
