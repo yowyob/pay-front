@@ -3,7 +3,7 @@
 import { BffError, bffPost } from "@/lib/bff-client";
 import { SESSION_REFRESH_INTERVAL_MS } from "@/lib/session-refresh";
 import type { components } from "@/types/schemas-auth";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 
 type RefreshTokenResponse = components["schemas"]["RefreshTokenResponse"];
@@ -16,9 +16,14 @@ export function SessionRefreshProvider({
   children,
 }: SessionRefreshProviderProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const refreshingRef = useRef(false);
 
   useEffect(() => {
+    if (pathname === "/tenants" || pathname === "/organizations") {
+      return;
+    }
+
     let cancelled = false;
 
     async function refreshSession() {
@@ -49,7 +54,7 @@ export function SessionRefreshProvider({
       cancelled = true;
       globalThis.clearInterval(intervalId);
     };
-  }, [router]);
+  }, [pathname, router]);
 
   return children;
 }

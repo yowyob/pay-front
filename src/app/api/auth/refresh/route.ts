@@ -24,6 +24,14 @@ export async function POST(request: Request) {
     );
   }
 
+  if (!session.tenantId) {
+    return NextResponse.json({
+      success: true,
+      data: null,
+      message: "Tenant non sélectionné, refresh ignoré",
+    });
+  }
+
   const client = createIwmAuthClient(request);
   const result = await client.POST("/api/auth/refresh", {
     body: { refreshToken },

@@ -24,13 +24,13 @@ cp .env.example .env
 | `IWM_API_BASE_URL`        | URL de base de l'API IWM                                                                     |
 | `IWM_CLIENT_ID`           | Identifiant client (`X-Client-Id`)                                                           |
 | `IWM_API_KEY`             | Clé API (`X-Api-Key`)                                                                        |
-| `IWM_TENANT_ID`           | Identifiant tenant Kernel (`X-Tenant-Id`)                                                    |
 | `PAYMENT_PAYER_REFERENCE` | Référence payeur MYCOOLPAY (ex. `+237690295069`), injectée côté BFF                          |
 | `COOKIE_ACCESS_TOKEN`     | Nom du cookie httpOnly JWT (défaut : `yy_pay_access_token`)                                  |
 | `COOKIE_REFRESH_TOKEN`    | Nom du cookie refresh token                                                                  |
 | `COOKIE_ORGANIZATION_ID`  | Nom du cookie organisation active                                                            |
 | `COOKIE_WALLET_ID`        | Nom du cookie wallet actif                                                                   |
 | `COOKIE_ACTOR_ID`         | Nom du cookie actor utilisateur                                                              |
+| `COOKIE_TENANT_ID`        | Nom du cookie tenant (`X-Tenant-Id`), renseigné via `discover-contexts` / `select-context`   |
 | `PAYMENT_CALLBACK_URL`         | URL de retour MYCOOLPAY en cas de succès (ex. `http://localhost:3000/console?payment=success`) |
 | `PAYMENT_FAILURE_CALLBACK_URL` | URL de retour MYCOOLPAY en cas d'échec ou d'annulation (ex. `http://localhost:3000/console?payment=failure`) |
 
@@ -38,7 +38,7 @@ cp .env.example .env
 
 1. **Landing** (`/`) - présentation, ancres Documentation / Tarifs
 2. **Login** (`/login`) - identifiants → MFA email → cookie httpOnly posé par le BFF
-3. **Organisations** (`/organizations`) - `GET /api/auth/me/memberships` (ou `discover-contexts` en secours) puis `select-context`, cookie `organizationId`
+3. **Organisations** (`/organizations`) - `POST /api/auth/discover-contexts` (pose le cookie `tenantId`) puis `select-context`, cookie `organizationId`
 4. **Console** (`/console`) - wallet, transactions, plans, panier
 5. **Paiement** - via wallet (`purchase` par plan), MYCOOLPAY plans commerciaux (`commercial-plans/{planCode}/checkout` + devis serveur), ou recharge wallet provider (`recharge` + `recharge-orders/refresh`)
 

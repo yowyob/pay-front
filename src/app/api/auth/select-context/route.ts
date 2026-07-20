@@ -1,6 +1,10 @@
 import { asJsonBody, readJsonBody } from "@/lib/bff-utils";
 import { createIwmAuthClient } from "@/lib/iwm-auth-client";
-import { applySessionCookies } from "@/lib/session-cookies";
+import { extractLoginSession } from "@/lib/login-session";
+import {
+  applySessionCookies,
+  getSessionFromRequest,
+} from "@/lib/session-cookies";
 import type { components } from "@/types/schemas-auth";
 import { NextResponse } from "next/server";
 
@@ -26,14 +30,23 @@ export async function POST(request: Request) {
 
   const contextual = payload?.data;
   const session = contextual?.session as LoginResponse | undefined;
+  const sessionCookies = extractLoginSession(session);
+  const requestSession = getSessionFromRequest(request);
+
+  const preservedAccessToken =
+    sessionCookies?.accessToken ??
+    (requestSession.authorization?.startsWith("Bearer ")
+      ? requestSession.authorization.slice(7)
+      : undefined);
 
   applySessionCookies(response, {
-    accessToken: session?.accessToken,
-    refreshToken: session?.refreshToken,
-    actorId: session?.actorId,
+    accessToken: preservedAccessToken,
+    refreshToken: sessionCookies?.refreshToken ?? requestSession.refreshToken,
+    actorId: sessionCookies?.actorId ?? requestSession.actorId,
     organizationId: contextual?.selectedOrganizationId,
-    accessExpiresInSeconds: session?.expiresInSeconds,
-    refreshExpiresInSeconds: session?.refreshExpiresInSeconds,
+    tenantId: contextual?.selectedTenantId ?? requestSession.tenantId,
+    accessExpiresInSeconds: sessionCookies?.accessExpiresInSeconds,
+    refreshExpiresInSeconds: sessionCookies?.refreshExpiresInSeconds,
   });
 
   return response;

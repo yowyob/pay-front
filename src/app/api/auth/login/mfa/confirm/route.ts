@@ -1,6 +1,11 @@
 import { asJsonBody, readJsonBody } from "@/lib/bff-utils";
 import { createIwmAuthClient } from "@/lib/iwm-auth-client";
-import { applySessionCookies } from "@/lib/session-cookies";
+import { extractLoginSession } from "@/lib/login-session";
+import {
+  applySessionCookies,
+  clearOrganizationCookie,
+  getSessionFromRequest,
+} from "@/lib/session-cookies";
 import type { components } from "@/types/schemas-auth";
 import { NextResponse } from "next/server";
 
@@ -11,6 +16,20 @@ type ApiResponseLoginResponse =
 
 export async function POST(request: Request) {
   const body = await readJsonBody<ConfirmMfaLoginRequest>(request);
+  const session = getSessionFromRequest(request);
+
+  if (!session.tenantId) {
+    return NextResponse.json(
+      {
+        success: false,
+        message:
+          "Tenant requis : sélectionnez un tenant avant de confirmer le code MFA.",
+        errorCode: "TENANT_REQUIRED",
+      },
+      { status: 400 },
+    );
+  }
+
   const client = createIwmAuthClient(request);
   const result = await client.POST("/api/auth/login/mfa/confirm", {
     body: asJsonBody(body),
@@ -24,14 +43,10 @@ export async function POST(request: Request) {
   });
 
   const loginData = payload?.data as LoginResponse | undefined;
-  if (loginData?.accessToken) {
-    applySessionCookies(response, {
-      accessToken: loginData.accessToken,
-      refreshToken: loginData.refreshToken,
-      actorId: loginData.actorId,
-      accessExpiresInSeconds: loginData.expiresInSeconds,
-      refreshExpiresInSeconds: loginData.refreshExpiresInSeconds,
-    });
+  const sessionCookies = extractLoginSession(loginData);
+  if (result.response.ok && sessionCookies) {
+    clearOrganizationCookie(response);
+    applySessionCookies(response, sessionCookies);
   }
 
   return response;

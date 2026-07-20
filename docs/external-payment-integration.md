@@ -73,7 +73,8 @@ sequenceDiagram
 ### Côté yy-pay (plateforme)
 
 - Instance yy-pay accessible en HTTPS
-- Kernel IWM configuré (`IWM_API_BASE_URL`, `IWM_CLIENT_ID`, `IWM_API_KEY`, `IWM_TENANT_ID`)
+- Kernel IWM configuré (`IWM_API_BASE_URL`, `IWM_CLIENT_ID`, `IWM_API_KEY`)
+- Le `X-Tenant-Id` est obtenu via `POST /api/auth/discover-contexts` (cookie session), pas via une variable d'environnement
 - Callbacks MYCOOLPAY pointant vers yy-pay
 
 ---
@@ -367,7 +368,7 @@ La page `/direct-payment/return` :
 ```http
 X-Client-Id: <IWM_CLIENT_ID>
 X-Api-Key: <IWM_API_KEY>
-X-Tenant-Id: <IWM_TENANT_ID>
+X-Tenant-Id: <tenantId depuis cookie session, via discover-contexts>
 Authorization: Bearer <access_token utilisateur>
 Content-Type: application/json
 ```

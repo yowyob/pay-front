@@ -280,21 +280,29 @@ async function creditOrganizationWallet(
   amount: number,
   reference: string,
 ): Promise<{ credited: boolean; message?: string }> {
-  const { baseUrl, clientId, apiKey, tenantId } = getIwmEnv();
+  const { baseUrl, clientId, apiKey } = getIwmEnv();
   const session = getSessionFromRequest(request);
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "X-Client-Id": clientId,
+    "X-Api-Key": apiKey,
+  };
+
+  if (session.tenantId) {
+    headers["X-Tenant-Id"] = session.tenantId;
+  }
+
+  if (session.authorization) {
+    headers.Authorization = session.authorization;
+  }
 
   const response = await fetch(
     `${baseUrl}/api/payments/wallets/${encodeURIComponent(walletId)}/credit`,
     {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        "X-Client-Id": clientId,
-        "X-Api-Key": apiKey,
-        "X-Tenant-Id": tenantId,
-        ...(session.authorization
-          ? { Authorization: session.authorization }
-          : {}),
+        ...headers,
       },
       body: JSON.stringify({ amount, reference }),
       signal: AbortSignal.timeout(10_000),

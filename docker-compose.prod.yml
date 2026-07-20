@@ -18,8 +18,12 @@ services:
       COOKIE_ORGANIZATION_ID: "yy_pay_organization_id"
       COOKIE_WALLET_ID: "yy_pay_wallet_id"
       COOKIE_ACTOR_ID: "yy_pay_actor_id"
+      COOKIE_TENANT_ID: "yy_pay_tenant_id"
       PAYMENT_CALLBACK_URL: "https://kernel-core.yowyob.com/pay/console?payment=success"
       PAYMENT_FAILURE_CALLBACK_URL: "https://kernel-core.yowyob.com/pay/console?payment=failure"
+      PAYMENT_DIRECT_SUCCESS_CALLBACK_URL: "https://kernel-core.yowyob.com/pay/direct-payment/return?payment=success"
+      PAYMENT_DIRECT_FAILURE_CALLBACK_URL: "https://kernel-core.yowyob.com/pay/direct-payment/return?payment=failure"
+      APP_BASE_URL: "https://kernel-core.yowyob.com/pay"
     healthcheck:
       test: ["CMD-SHELL","wget -qO- http://127.0.0.1:3000/pay >/dev/null 2>&1 || exit 1"]
       interval: 20s

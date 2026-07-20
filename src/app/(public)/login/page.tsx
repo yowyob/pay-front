@@ -3,27 +3,31 @@
 import { SiteHeader } from "@/components/layout/site-header";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+    organizationsPath as buildOrganizationsPath,
+    tenantsPath as buildTenantsPath,
+    hardNavigate,
+} from "@/lib/auth-wizard-navigation";
 import { bffPostEnvelope } from "@/lib/bff-client";
 import { useAuthWizardStore } from "@/stores/auth-wizard-store";
+import type { components } from "@/types/schemas-auth";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { toast } from "sonner";
 
-type LoginChallengeData = {
-  mfaToken?: string;
-  requiresMfa?: boolean;
-};
+type DiscoverLoginContextsResponse =
+  components["schemas"]["DiscoverLoginContextsResponse"];
 
 export default function LoginPage() {
   return (
@@ -43,31 +47,48 @@ function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnTo = searchParams.get("returnTo");
-  const { setCredentials, setMfaToken, mfaToken, email, password } =
-    useAuthWizardStore();
-  const [step, setStep] = useState<"credentials" | "mfa">("credentials");
+  const stepParam = searchParams.get("step");
+  const {
+    setCredentials,
+    setDiscoverData,
+    setSelectionToken,
+    mfaToken,
+    email,
+    password,
+  } = useAuthWizardStore();
+  const step = stepParam === "mfa" ? "mfa" : "credentials";
   const [principal, setPrincipal] = useState(email);
   const [secret, setSecret] = useState(password);
   const [code, setCode] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  function tenantsPath() {
+    return buildTenantsPath(returnTo);
+  }
+
+  function organizationsPath() {
+    return buildOrganizationsPath(returnTo);
+  }
+
   async function handleLogin(event: React.FormEvent) {
     event.preventDefault();
     setLoading(true);
     try {
-      const result = await bffPostEnvelope<LoginChallengeData>(
-        "/api/auth/login",
+      const result = await bffPostEnvelope<DiscoverLoginContextsResponse>(
+        "/api/auth/discover-contexts",
         { principal, password: secret },
       );
-      const mfa = result.data?.mfaToken;
-      if (!mfa) {
-        throw new Error("Token MFA introuvable dans la réponse");
+      const data = result.data;
+      if (!data?.selectionToken) {
+        throw new Error("Identifiants invalides ou aucun tenant disponible");
       }
+
       setCredentials(principal, secret);
-      setMfaToken(mfa);
-      setStep("mfa");
-      toast.success("Code MFA envoyé par email");
+      setSelectionToken(data.selectionToken);
+      setDiscoverData(data);
+      toast.success("Identifiants validés — choisissez votre tenant");
+      hardNavigate(tenantsPath());
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Échec de la connexion",
@@ -86,11 +107,7 @@ function LoginPageContent() {
         code,
       });
       toast.success("Authentification réussie");
-      if (returnTo?.startsWith("/")) {
-        router.push(returnTo);
-      } else {
-        router.push("/organizations");
-      }
+      hardNavigate(organizationsPath());
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Code MFA invalide",
@@ -182,7 +199,7 @@ function LoginPageContent() {
                   {loading && (
                     <Loader2 className="yypay:h-4 yypay:w-4 yypay:animate-spin" />
                   )}
-                  Se connecter
+                  Continuer
                 </Button>
               </form>
             ) : (
@@ -209,14 +226,14 @@ function LoginPageContent() {
                   type="button"
                   variant="ghost"
                   className="yypay:w-full"
-                  onClick={() => setStep("credentials")}
+                  onClick={() => router.push(tenantsPath())}
                 >
-                  Retour
+                  Retour au choix du tenant
                 </Button>
               </form>
             )}
             <p className="yypay:mt-6 yypay:text-center yypay:text-xs yypay:text-secondary">
-              Connexion déléguée au Kernel - aucun mot de passe n&apos;est
+              Connexion déléguée au Kernel — aucun mot de passe n&apos;est
               stocké.
             </p>
             <p className="yypay:mt-2 yypay:text-center yypay:text-xs yypay:text-primary">

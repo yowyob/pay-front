@@ -12,11 +12,18 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { bffGet, bffPost, bffPostEnvelope } from "@/lib/bff-client";
+import { performLogin } from "@/lib/auth-login-flow";
+import {
+  consolePath,
+  hardNavigate,
+  mfaPath as buildMfaPath,
+} from "@/lib/auth-wizard-navigation";
+import { getOrganizationsForContext } from "@/lib/tenant-context";
 import { useAuthWizardStore } from "@/stores/auth-wizard-store";
 import type { components } from "@/types/schemas-auth";
 import { Building2, Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 type DiscoverLoginContextsResponse =
@@ -60,12 +67,47 @@ function mapMembershipsToOrgs(
   return Array.from(grouped.values());
 }
 
-function flattenDiscoveredContexts(
-  data: DiscoverLoginContextsResponse,
-): OrgOption[] {
+export default function OrganizationsPage() {
   return (
-    data.contexts?.flatMap((context) =>
-      (context.organizations ?? [])
+    <Suspense
+      fallback={
+        <div className="yypay:flex yypay:min-h-full yypay:items-center yypay:justify-center yypay:bg-background">
+          <Loader2 className="yypay:h-8 yypay:w-8 yypay:animate-spin yypay:text-primary" />
+        </div>
+      }
+    >
+      <OrganizationsPageContent />
+    </Suspense>
+  );
+}
+
+function OrganizationsPageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = searchParams.get("returnTo");
+  const {
+    email,
+    password,
+    hasCredentials,
+    discoverData,
+    selectedContextId,
+    selectionToken,
+    setSelectionToken,
+    setDiscoverData,
+    setMfaToken,
+    clearSensitive,
+  } = useAuthWizardStore();
+  const [loading, setLoading] = useState(true);
+  const [selecting, setSelecting] = useState<string | null>(null);
+  const [orgs, setOrgs] = useState<OrgOption[]>([]);
+
+  useEffect(() => {
+    function mapContextOrganizations(
+      data: DiscoverLoginContextsResponse,
+      contextId: string,
+    ): OrgOption[] {
+      const organizations = getOrganizationsForContext(data, contextId);
+      return organizations
         .filter((org): org is typeof org & { organizationId: string } =>
           Boolean(org.organizationId),
         )
@@ -75,23 +117,22 @@ function flattenDiscoveredContexts(
           displayName: org.displayName,
           longName: org.longName,
           services: org.services,
-          contextId: context.contextId,
+          contextId,
           selectionToken: data.selectionToken,
-        })),
-    ) ?? []
-  );
-}
+        }));
+    }
 
-export default function OrganizationsPage() {
-  const router = useRouter();
-  const { email, password, hasCredentials, setSelectionToken, clearSensitive } =
-    useAuthWizardStore();
-  const [loading, setLoading] = useState(true);
-  const [selecting, setSelecting] = useState<string | null>(null);
-  const [orgs, setOrgs] = useState<OrgOption[]>([]);
-
-  useEffect(() => {
     async function loadFromDiscoverContexts(): Promise<OrgOption[] | null> {
+      if (discoverData?.selectionToken && selectedContextId) {
+        const fromStore = mapContextOrganizations(
+          discoverData,
+          selectedContextId,
+        );
+        if (fromStore.length > 0) {
+          return fromStore;
+        }
+      }
+
       if (!hasCredentials()) {
         return null;
       }
@@ -105,13 +146,18 @@ export default function OrganizationsPage() {
         throw new Error("Impossible de récupérer les organisations");
       }
 
-      const discovered = flattenDiscoveredContexts(data);
-      if (discovered.length === 0) {
+      setDiscoverData(data);
+      setSelectionToken(data.selectionToken);
+
+      const contextId =
+        selectedContextId ||
+        data.contexts?.find((context) => context.contextId)?.contextId;
+      if (!contextId) {
         return null;
       }
 
-      setSelectionToken(data.selectionToken);
-      return discovered;
+      const discovered = mapContextOrganizations(data, contextId);
+      return discovered.length > 0 ? discovered : null;
     }
 
     async function loadFromMemberships(): Promise<OrgOption[] | null> {
@@ -145,7 +191,7 @@ export default function OrganizationsPage() {
           // Session expirée ou memberships indisponibles.
         }
 
-        if (!hasCredentials()) {
+        if (!hasCredentials() && !discoverData?.selectionToken) {
           toast.error("Session expirée, reconnectez-vous");
           router.replace("/login");
           return;
@@ -164,7 +210,16 @@ export default function OrganizationsPage() {
     }
 
     void loadOrganizations();
-  }, [email, password, hasCredentials, router, setSelectionToken]);
+  }, [
+    email,
+    password,
+    hasCredentials,
+    router,
+    discoverData,
+    selectedContextId,
+    setDiscoverData,
+    setSelectionToken,
+  ]);
 
   const uniqueOrgs = useMemo(() => {
     const map = new Map<string, OrgOption>();
@@ -179,6 +234,13 @@ export default function OrganizationsPage() {
       return {
         selectionToken: org.selectionToken,
         contextId: org.contextId,
+      };
+    }
+
+    if (selectionToken && selectedContextId) {
+      return {
+        selectionToken,
+        contextId: selectedContextId,
       };
     }
 
@@ -216,6 +278,20 @@ export default function OrganizationsPage() {
   async function handleSelect(org: OrgOption) {
     setSelecting(org.organizationId);
     try {
+      const session = await bffGet<{ authenticated?: boolean }>(
+        "/api/session/context",
+      );
+
+      if (!session.authenticated && hasCredentials()) {
+        const loginResult = await performLogin(email, password);
+        if (loginResult.kind === "mfa_required") {
+          setMfaToken(loginResult.mfaToken);
+          toast.success("Code MFA envoyé par email");
+          hardNavigate(buildMfaPath(returnTo));
+          return;
+        }
+      }
+
       const { selectionToken, contextId } = await resolveSelectionContext(org);
 
       await bffPost("/api/auth/select-context", {
@@ -225,7 +301,7 @@ export default function OrganizationsPage() {
       });
       clearSensitive();
       toast.success("Organisation sélectionnée");
-      router.push("/console");
+      hardNavigate(consolePath(returnTo));
     } catch (error) {
       toast.error(
         error instanceof Error

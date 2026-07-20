@@ -1,10 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // L interface paiement est servie par Traefik sous kernel-core.yowyob.com/pay.
+  // Interface paiement servie par Traefik sous kernel-core.yowyob.com/pay.
   basePath: "/pay",
-  reactCompiler: true,
   typescript: { ignoreBuildErrors: true },
+  /* config options here */
+  reactCompiler: true,
 };
 
 export default nextConfig;

@@ -15,6 +15,7 @@ export type SessionCookieData = {
   organizationId?: string;
   actorId?: string;
   walletId?: string;
+  tenantId?: string;
 };
 
 function cookieMaxAge(seconds?: number) {
@@ -34,6 +35,7 @@ export function getCookieNames() {
       process.env.COOKIE_ORGANIZATION_ID?.trim() || "yy_pay_organization_id",
     walletId: process.env.COOKIE_WALLET_ID?.trim() || "yy_pay_wallet_id",
     actorId: process.env.COOKIE_ACTOR_ID?.trim() || "yy_pay_actor_id",
+    tenantId: process.env.COOKIE_TENANT_ID?.trim() || "yy_pay_tenant_id",
   };
 }
 
@@ -70,6 +72,7 @@ export function getSessionFromRequest(request: Request) {
     actorId: cookies[names.actorId],
     walletId: cookies[names.walletId],
     refreshToken: cookies[names.refreshToken],
+    tenantId: cookies[names.tenantId],
   };
 }
 
@@ -104,6 +107,9 @@ export function applySessionCookies(
   if (data.walletId) {
     response.cookies.set(names.walletId, data.walletId, COOKIE_OPTIONS);
   }
+  if (data.tenantId) {
+    response.cookies.set(names.tenantId, data.tenantId, COOKIE_OPTIONS);
+  }
 
   return response;
 }
@@ -113,6 +119,25 @@ export function clearSessionCookies(response: NextResponse) {
   for (const name of Object.values(names)) {
     response.cookies.set(name, "", { ...COOKIE_OPTIONS, maxAge: 0 });
   }
+  return response;
+}
+
+export function clearOrganizationCookie(response: NextResponse) {
+  const names = getCookieNames();
+  response.cookies.set(names.organizationId, "", {
+    ...COOKIE_OPTIONS,
+    maxAge: 0,
+  });
+  return response;
+}
+
+export function clearTenantAndOrganizationCookies(response: NextResponse) {
+  const names = getCookieNames();
+  response.cookies.set(names.tenantId, "", { ...COOKIE_OPTIONS, maxAge: 0 });
+  response.cookies.set(names.organizationId, "", {
+    ...COOKIE_OPTIONS,
+    maxAge: 0,
+  });
   return response;
 }
 
@@ -126,4 +151,8 @@ export function getRefreshTokenCookieName() {
 
 export function getOrganizationIdCookieName() {
   return getCookieNames().organizationId;
+}
+
+export function getTenantIdCookieName() {
+  return getCookieNames().tenantId;
 }
