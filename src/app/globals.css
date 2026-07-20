@@ -1,53 +1,86 @@
-@import "tailwindcss";
+@import "tailwindcss" prefix(yypay);
+
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #f6f8fc;
-  --foreground: #03045e;
-  --card: #ffffff;
-  --card-foreground: #03045e;
-  --primary: #1f47e6;
-  --primary-foreground: #ffffff;
-  --secondary: #03045e;
-  --secondary-foreground: #ffffff;
-  --muted: #ecf3fa;
-  --muted-foreground: #99a1af;
-  --accent: #ecf3fa;
-  --accent-foreground: #03045e;
-  --success: #16a34a;
-  --success-bg: #dcfce7;
-  --warning: #d97706;
-  --warning-bg: #fef3c7;
-  --destructive: #ef4444;
-  --destructive-bg: #fee2e2;
-  --border: #e5e7eb;
-  --radius: 0.5rem;
+  color-scheme: light;
+
+  --app-background: #f8fafc;
+  --app-foreground: #0f172a;
+  --app-card: #ffffff;
+  --app-card-foreground: #0f172a;
+  --app-muted: #f1f5f9;
+  --app-muted-foreground: #64748b;
+  --app-border: #e2e8f0;
+  --app-secondary: #48546b;
+  --app-accent: #eef2ff;
+  --app-accent-foreground: #1b4df5;
+  --app-navy: #0f172a;
+  --app-surface: #f8fafc;
+  --app-shadow-card: 0 1px 3px 0 rgb(15 23 42 / 0.06),
+    0 1px 2px -1px rgb(15 23 42 / 0.06);
+  --app-shadow-card-hover: 0 10px 25px -5px rgb(15 23 42 / 0.08),
+    0 4px 10px -6px rgb(15 23 42 / 0.06);
+  --app-shadow-popular: 0 0 0 1px #1b4df5,
+    0 12px 28px -8px rgb(27 77 245 / 0.22);
+}
+
+.dark {
+  color-scheme: dark;
+
+  --app-background: #0b1120;
+  --app-foreground: #f1f5f9;
+  --app-card: #111827;
+  --app-card-foreground: #f8fafc;
+  --app-muted: #1e293b;
+  --app-muted-foreground: #94a3b8;
+  --app-border: #334155;
+  --app-secondary: #94a3b8;
+  --app-accent: #1e293b;
+  --app-accent-foreground: #93b4ff;
+  --app-navy: #f8fafc;
+  --app-surface: #0f172a;
+  --app-shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.35);
+  --app-shadow-card-hover: 0 10px 25px -5px rgb(0 0 0 / 0.45);
+  --app-shadow-popular: 0 0 0 1px #1b4df5,
+    0 12px 28px -8px rgb(27 77 245 / 0.35);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-border: var(--border);
-  --color-success: var(--success);
-  --color-success-bg: var(--success-bg);
-  --color-warning: var(--warning);
-  --color-warning-bg: var(--warning-bg);
-  --color-destructive: var(--destructive);
-  --color-destructive-bg: var(--destructive-bg);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --color-primary: #1b4df5;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: var(--app-secondary);
+  --color-white: #ffffff;
+  --color-navy: var(--app-navy);
+  --color-surface: var(--app-surface);
+  --color-border: var(--app-border);
+  --color-muted: var(--app-muted);
+  --color-background: var(--app-background);
+  --color-foreground: var(--app-foreground);
+  --color-card: var(--app-card);
+  --color-card-foreground: var(--app-card-foreground);
+  --color-muted-foreground: var(--app-muted-foreground);
+  --color-accent: var(--app-accent);
+  --color-accent-foreground: var(--app-accent-foreground);
+  --color-success: #10b981;
+  --color-popular: #1b4df5;
+  --font-sans: var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --shadow-card: var(--app-shadow-card);
+  --shadow-card-hover: var(--app-shadow-card-hover);
+  --shadow-popular: var(--app-shadow-popular);
 }
 
-@layer base {
-  body {
-    @apply bg-background text-foreground antialiased;
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  }
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--app-background);
+  color: var(--app-foreground);
+  font-family: var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--yypay-color-primary);
+  outline-offset: 2px;
 }

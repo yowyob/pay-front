@@ -1,0 +1,2371 @@
+{
+	"openapi": "3.1.0",
+	"info": {
+	  "title": "IWM Backend API",
+	  "description": "Documentation for the modular monolith hexagonal backend APIs.",
+	  "version": "0.1.0-SNAPSHOT"
+	},
+	"servers": [
+	  {
+		"url": "https://kernel-core.yowyob.com/kernel-api",
+		"description": "Generated server url"
+	  }
+	],
+	"security": [
+	  {
+		"ClientId": [],
+		"ApiKey": []
+	  },
+	  {
+		"ClientId": [],
+		"ApiKey": [],
+		"BearerAuth": []
+	  }
+	],
+	"paths": {
+	  "/api/users/me/plan": {
+		"put": {
+		  "tags": [
+			"user-controller"
+		  ],
+		  "operationId": "updateMyPlan",
+		  "requestBody": {
+			"content": {
+			  "application/json": {
+				"schema": {
+				  "$ref": "#/components/schemas/UpdatePlanRequest"
+				}
+			  }
+			},
+			"required": true
+		  },
+		  "responses": {
+			"200": {
+			  "description": "OK",
+			  "content": {
+				"*/*": {
+				  "schema": {
+					"$ref": "#/components/schemas/ApiResponseUserAccountResponse"
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/api/users/me/onboarding": {
+		"put": {
+		  "tags": [
+			"user-controller"
+		  ],
+		  "operationId": "updateOnboarding",
+		  "requestBody": {
+			"content": {
+			  "application/json": {
+				"schema": {
+				  "$ref": "#/components/schemas/UpdateOnboardingRequest"
+				}
+			  }
+			},
+			"required": true
+		  },
+		  "responses": {
+			"200": {
+			  "description": "OK",
+			  "content": {
+				"*/*": {
+				  "schema": {
+					"$ref": "#/components/schemas/ApiResponseUserAccountResponse"
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/api/users/me/identity-onboarding": {
+		"put": {
+		  "tags": [
+			"user-controller"
+		  ],
+		  "operationId": "updateIdentityOnboarding",
+		  "requestBody": {
+			"content": {
+			  "application/json": {
+				"schema": {
+				  "$ref": "#/components/schemas/UpdateIdentityOnboardingRequest"
+				}
+			  }
+			},
+			"required": true
+		  },
+		  "responses": {
+			"200": {
+			  "description": "OK",
+			  "content": {
+				"*/*": {
+				  "schema": {
+					"$ref": "#/components/schemas/ApiResponseUserAccountResponse"
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/api/users/me/avatar": {
+		"put": {
+		  "tags": [
+			"user-controller"
+		  ],
+		  "operationId": "updateMyAvatar",
+		  "requestBody": {
+			"content": {
+			  "application/json": {
+				"schema": {
+				  "$ref": "#/components/schemas/UpdateAvatarRequest"
+				}
+			  }
+			},
+			"required": true
+		  },
+		  "responses": {
+			"200": {
+			  "description": "OK",
+			  "content": {
+				"*/*": {
+				  "schema": {
+					"$ref": "#/components/schemas/ApiResponseUserAccountResponse"
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/api/auth/users/{userId}/reset-password": {
+		"post": {
+		  "tags": [
+			"auth-controller"
+		  ],
+		  "operationId": "adminResetPassword",
+		  "parameters": [
+			{
+			  "name": "userId",
+			  "in": "path",
+			  "required": true,
+			  "schema": {
+				"type": "string",
+				"format": "uuid"
+			  }
+			}
+		  ],
+		  "responses": {
+			"200": {
+			  "description": "OK",
+			  "content": {
+				"*/*": {
+				  "schema": {
+					"$ref": "#/components/schemas/ApiResponseAdminResetPasswordResponse"
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/api/auth/sign-up": {
+		"post": {
+		  "tags": [
+			"auth-controller"
+		  ],
+		  "operationId": "signUp",
+		  "requestBody": {
+			"content": {
+			  "application/json": {
+				"schema": {
+				  "$ref": "#/components/schemas/PublicSignUpRequest"
+				}
+			  }
+			},
+			"required": true
+		  },
+		  "responses": {
+			"200": {
+			  "description": "OK",
+			  "content": {
+				"*/*": {
+				  "schema": {
+					"$ref": "#/components/schemas/ApiResponseObject"
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/api/auth/select-context": {
+		"post": {
+		  "tags": [
+			"auth-controller"
+		  ],
+		  "operationId": "selectContext",
+		  "requestBody": {
+			"content": {
+			  "application/json": {
+				"schema": {
+				  "$ref": "#/components/schemas/SelectLoginContextRequest"
+				}
+			  }
+			},
+			"required": true
+		  },
+		  "responses": {
+			"200": {
+			  "description": "OK",
+			  "content": {
+				"*/*": {
+				  "schema": {
+					"$ref": "#/components/schemas/ApiResponseContextualLoginResponse"
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/api/auth/reset-password": {
+		"post": {
+		  "tags": [
+			"auth-controller"
+		  ],
+		  "operationId": "resetPassword",
+		  "requestBody": {
+			"content": {
+			  "application/json": {
+				"schema": {
+				  "$ref": "#/components/schemas/ResetPasswordRequest"
+				}
+			  }
+			},
+			"required": true
+		  },
+		  "responses": {
+			"200": {
+			  "description": "OK",
+			  "content": {
+				"*/*": {
+				  "schema": {
+					"$ref": "#/components/schemas/ApiResponseUserAccountResponse"
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/api/auth/register": {
+		"post": {
+		  "tags": [
+			"auth-controller"
+		  ],
+		  "operationId": "register",
+		  "requestBody": {
+			"content": {
+			  "application/json": {
+				"schema": {
+				  "$ref": "#/components/schemas/RegisterUserRequest"
+				}
+			  }
+			},
+			"required": true
+		  },
+		  "responses": {
+			"200": {
+			  "description": "OK",
+			  "content": {
+				"*/*": {
+				  "schema": {
+					"$ref": "#/components/schemas/ApiResponseUserAccountResponse"
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/api/auth/refresh": {
+		"post": {
+		  "tags": [
+			"session-tokens-controller"
+		  ],
+		  "operationId": "refresh",
+		  "requestBody": {
+			"content": {
+			  "application/json": {
+				"schema": {
+				  "$ref": "#/components/schemas/RefreshTokenRequest"
+				}
+			  }
+			},
+			"required": true
+		  },
+		  "responses": {
+			"200": {
+			  "description": "OK",
+			  "content": {
+				"*/*": {
+				  "schema": {
+					"$ref": "#/components/schemas/ApiResponseRefreshTokenResponse"
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/api/auth/phone-verification/request": {
+		"post": {
+		  "tags": [
+			"auth-controller"
+		  ],
+		  "operationId": "requestPhoneVerification",
+		  "requestBody": {
+			"content": {
+			  "application/json": {
+				"schema": {
+				  "$ref": "#/components/schemas/IssueOtpRequest"
+				}
+			  }
+			},
+			"required": true
+		  },
+		  "responses": {
+			"200": {
+			  "description": "OK",
+			  "content": {
+				"*/*": {
+				  "schema": {
+					"$ref": "#/components/schemas/ApiResponseOtpChallengeResponse"
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/api/auth/phone-verification/confirm": {
+		"post": {
+		  "tags": [
+			"auth-controller"
+		  ],
+		  "operationId": "confirmPhoneVerification",
+		  "requestBody": {
+			"content": {
+			  "application/json": {
+				"schema": {
+				  "$ref": "#/components/schemas/ConfirmMfaRequest"
+				}
+			  }
+			},
+			"required": true
+		  },
+		  "responses": {
+			"200": {
+			  "description": "OK",
+			  "content": {
+				"*/*": {
+				  "schema": {
+					"$ref": "#/components/schemas/ApiResponseUserAccountResponse"
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/api/auth/password-reset/issue": {
+		"post": {
+		  "tags": [
+			"auth-controller"
+		  ],
+		  "operationId": "issuePasswordReset",
+		  "requestBody": {
+			"content": {
+			  "application/json": {
+				"schema": {
+				  "$ref": "#/components/schemas/IssuePasswordResetRequest"
+				}
+			  }
+			},
+			"required": true
+		  },
+		  "responses": {
+			"200": {
+			  "description": "OK",
+			  "content": {
+				"*/*": {
+				  "schema": {
+					"$ref": "#/components/schemas/ApiResponseIssuedAuthChallengeResponse"
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/api/auth/otp": {
+		"post": {
+		  "tags": [
+			"auth-controller"
+		  ],
+		  "operationId": "issueOtp",
+		  "requestBody": {
+			"content": {
+			  "application/json": {
+				"schema": {
+				  "$ref": "#/components/schemas/IssueOtpRequest"
+				}
+			  }
+			},
+			"required": true
+		  },
+		  "responses": {
+			"200": {
+			  "description": "OK",
+			  "content": {
+				"*/*": {
+				  "schema": {
+					"$ref": "#/components/schemas/ApiResponseOtpChallengeResponse"
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/api/auth/otp/verify": {
+		"post": {
+		  "tags": [
+			"auth-controller"
+		  ],
+		  "operationId": "verifyOtp",
+		  "requestBody": {
+			"content": {
+			  "application/json": {
+				"schema": {
+				  "$ref": "#/components/schemas/VerifyOtpRequest"
+				}
+			  }
+			},
+			"required": true
+		  },
+		  "responses": {
+			"200": {
+			  "description": "OK",
+			  "content": {
+				"*/*": {
+				  "schema": {
+					"$ref": "#/components/schemas/ApiResponseOtpVerificationResponse"
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/api/auth/mfa/enable": {
+		"post": {
+		  "tags": [
+			"auth-controller"
+		  ],
+		  "operationId": "enableMfa",
+		  "requestBody": {
+			"content": {
+			  "application/json": {
+				"schema": {
+				  "$ref": "#/components/schemas/EnableMfaRequest"
+				}
+			  }
+			},
+			"required": true
+		  },
+		  "responses": {
+			"200": {
+			  "description": "OK",
+			  "content": {
+				"*/*": {
+				  "schema": {
+					"$ref": "#/components/schemas/ApiResponseOtpChallengeResponse"
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/api/auth/mfa/disable": {
+		"post": {
+		  "tags": [
+			"auth-controller"
+		  ],
+		  "operationId": "disableMfa",
+		  "responses": {
+			"200": {
+			  "description": "OK",
+			  "content": {
+				"*/*": {
+				  "schema": {
+					"$ref": "#/components/schemas/ApiResponseUserAccountResponse"
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/api/auth/mfa/confirm": {
+		"post": {
+		  "tags": [
+			"auth-controller"
+		  ],
+		  "operationId": "confirmMfa",
+		  "requestBody": {
+			"content": {
+			  "application/json": {
+				"schema": {
+				  "$ref": "#/components/schemas/ConfirmMfaRequest"
+				}
+			  }
+			},
+			"required": true
+		  },
+		  "responses": {
+			"200": {
+			  "description": "OK",
+			  "content": {
+				"*/*": {
+				  "schema": {
+					"$ref": "#/components/schemas/ApiResponseUserAccountResponse"
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/api/auth/me/spaces": {
+		"post": {
+		  "tags": [
+			"auth-controller"
+		  ],
+		  "operationId": "createOwnedSpace",
+		  "responses": {
+			"200": {
+			  "description": "OK",
+			  "content": {
+				"*/*": {
+				  "schema": {
+					"$ref": "#/components/schemas/ApiResponseObject"
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/api/auth/logout": {
+		"post": {
+		  "tags": [
+			"session-tokens-controller"
+		  ],
+		  "operationId": "logout",
+		  "parameters": [
+			{
+			  "name": "Authorization",
+			  "in": "header",
+			  "required": false,
+			  "schema": {
+				"type": "string"
+			  }
+			}
+		  ],
+		  "requestBody": {
+			"content": {
+			  "application/json": {
+				"schema": {
+				  "$ref": "#/components/schemas/RefreshTokenRequest"
+				}
+			  }
+			}
+		  },
+		  "responses": {
+			"200": {
+			  "description": "OK",
+			  "content": {
+				"*/*": {
+				  "schema": {
+					"$ref": "#/components/schemas/ApiResponseVoid"
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/api/auth/login": {
+		"post": {
+		  "tags": [
+			"auth-controller"
+		  ],
+		  "operationId": "login",
+		  "requestBody": {
+			"content": {
+			  "application/json": {
+				"schema": {
+				  "$ref": "#/components/schemas/LoginRequest"
+				}
+			  }
+			},
+			"required": true
+		  },
+		  "responses": {
+			"200": {
+			  "description": "OK",
+			  "content": {
+				"*/*": {
+				  "schema": {
+					"$ref": "#/components/schemas/ApiResponseObject"
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/api/auth/login/mfa/confirm": {
+		"post": {
+		  "tags": [
+			"auth-controller"
+		  ],
+		  "operationId": "confirmLoginMfa",
+		  "requestBody": {
+			"content": {
+			  "application/json": {
+				"schema": {
+				  "$ref": "#/components/schemas/ConfirmMfaLoginRequest"
+				}
+			  }
+			},
+			"required": true
+		  },
+		  "responses": {
+			"200": {
+			  "description": "OK",
+			  "content": {
+				"*/*": {
+				  "schema": {
+					"$ref": "#/components/schemas/ApiResponseLoginResponse"
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/api/auth/identify": {
+		"post": {
+		  "tags": [
+			"auth-controller"
+		  ],
+		  "operationId": "identify",
+		  "requestBody": {
+			"content": {
+			  "application/json": {
+				"schema": {
+				  "$ref": "#/components/schemas/IdentifyAccountRequest"
+				}
+			  }
+			},
+			"required": true
+		  },
+		  "responses": {
+			"200": {
+			  "description": "OK",
+			  "content": {
+				"*/*": {
+				  "schema": {
+					"$ref": "#/components/schemas/ApiResponseIdentifyAccountResponse"
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/api/auth/forgot-password": {
+		"post": {
+		  "tags": [
+			"auth-controller"
+		  ],
+		  "operationId": "forgotPassword",
+		  "requestBody": {
+			"content": {
+			  "application/json": {
+				"schema": {
+				  "$ref": "#/components/schemas/ForgotPasswordRequest"
+				}
+			  }
+			},
+			"required": true
+		  },
+		  "responses": {
+			"200": {
+			  "description": "OK",
+			  "content": {
+				"*/*": {
+				  "schema": {
+					"$ref": "#/components/schemas/ApiResponseForgotPasswordResponse"
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/api/auth/email-verification/resend": {
+		"post": {
+		  "tags": [
+			"auth-controller"
+		  ],
+		  "operationId": "resendEmailVerification",
+		  "requestBody": {
+			"content": {
+			  "application/json": {
+				"schema": {
+				  "type": "object",
+				  "additionalProperties": {
+  
+				  }
+				}
+			  }
+			},
+			"required": true
+		  },
+		  "responses": {
+			"200": {
+			  "description": "OK",
+			  "content": {
+				"*/*": {
+				  "schema": {
+					"$ref": "#/components/schemas/ApiResponseIssuedAuthChallengeResponse"
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/api/auth/email-verification/request": {
+		"post": {
+		  "tags": [
+			"auth-controller"
+		  ],
+		  "operationId": "requestEmailVerification",
+		  "responses": {
+			"200": {
+			  "description": "OK",
+			  "content": {
+				"*/*": {
+				  "schema": {
+					"$ref": "#/components/schemas/ApiResponseIssuedAuthChallengeResponse"
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/api/auth/email-verification/confirm": {
+		"post": {
+		  "tags": [
+			"auth-controller"
+		  ],
+		  "operationId": "confirmEmailVerification",
+		  "requestBody": {
+			"content": {
+			  "application/json": {
+				"schema": {
+				  "$ref": "#/components/schemas/ConfirmEmailVerificationRequest"
+				}
+			  }
+			},
+			"required": true
+		  },
+		  "responses": {
+			"200": {
+			  "description": "OK",
+			  "content": {
+				"*/*": {
+				  "schema": {
+					"$ref": "#/components/schemas/ApiResponseUserAccountResponse"
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/api/auth/discover-sign-up-contexts": {
+		"post": {
+		  "tags": [
+			"auth-controller"
+		  ],
+		  "operationId": "discoverSignUpContexts",
+		  "requestBody": {
+			"content": {
+			  "application/json": {
+				"schema": {
+				  "$ref": "#/components/schemas/DiscoverSignUpContextsRequest"
+				}
+			  }
+			},
+			"required": true
+		  },
+		  "responses": {
+			"200": {
+			  "description": "OK",
+			  "content": {
+				"*/*": {
+				  "schema": {
+					"$ref": "#/components/schemas/ApiResponseDiscoverSignUpContextsResponse"
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/api/auth/discover-contexts": {
+		"post": {
+		  "tags": [
+			"auth-controller"
+		  ],
+		  "operationId": "discoverContexts",
+		  "requestBody": {
+			"content": {
+			  "application/json": {
+				"schema": {
+				  "$ref": "#/components/schemas/LoginRequest"
+				}
+			  }
+			},
+			"required": true
+		  },
+		  "responses": {
+			"200": {
+			  "description": "OK",
+			  "content": {
+				"*/*": {
+				  "schema": {
+					"$ref": "#/components/schemas/ApiResponseDiscoverLoginContextsResponse"
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/api/auth/change-password": {
+		"post": {
+		  "tags": [
+			"auth-controller"
+		  ],
+		  "operationId": "changePassword",
+		  "requestBody": {
+			"content": {
+			  "application/json": {
+				"schema": {
+				  "$ref": "#/components/schemas/ChangePasswordRequest"
+				}
+			  }
+			},
+			"required": true
+		  },
+		  "responses": {
+			"200": {
+			  "description": "OK",
+			  "content": {
+				"*/*": {
+				  "schema": {
+					"$ref": "#/components/schemas/ApiResponseUserAccountResponse"
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/api/auth/captcha": {
+		"post": {
+		  "tags": [
+			"auth-controller"
+		  ],
+		  "operationId": "issueCaptcha",
+		  "responses": {
+			"200": {
+			  "description": "OK",
+			  "content": {
+				"*/*": {
+				  "schema": {
+					"$ref": "#/components/schemas/ApiResponseCaptchaChallengeResponse"
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/api/auth/captcha/verify": {
+		"post": {
+		  "tags": [
+			"auth-controller"
+		  ],
+		  "operationId": "verifyCaptcha",
+		  "requestBody": {
+			"content": {
+			  "application/json": {
+				"schema": {
+				  "$ref": "#/components/schemas/VerifyCaptchaRequest"
+				}
+			  }
+			},
+			"required": true
+		  },
+		  "responses": {
+			"200": {
+			  "description": "OK",
+			  "content": {
+				"*/*": {
+				  "schema": {
+					"$ref": "#/components/schemas/ApiResponseCaptchaVerificationResponse"
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/api/users/me": {
+		"get": {
+		  "tags": [
+			"user-controller"
+		  ],
+		  "operationId": "getMe",
+		  "responses": {
+			"200": {
+			  "description": "OK",
+			  "content": {
+				"*/*": {
+				  "schema": {
+					"$ref": "#/components/schemas/ApiResponseUserAccountResponse"
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/api/auth/me/memberships": {
+		"get": {
+		  "tags": [
+			"auth-controller"
+		  ],
+		  "operationId": "myMemberships",
+		  "responses": {
+			"200": {
+			  "description": "OK",
+			  "content": {
+				"*/*": {
+				  "schema": {
+					"$ref": "#/components/schemas/ApiResponseListUserMembershipResponse"
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  }
+	},
+	"components": {
+	  "schemas": {
+		"UpdatePlanRequest": {
+		  "type": "object",
+		  "properties": {
+			"plan": {
+			  "type": "string",
+			  "minLength": 1
+			}
+		  },
+		  "required": [
+			"plan"
+		  ]
+		},
+		"ApiResponseUserAccountResponse": {
+		  "type": "object",
+		  "properties": {
+			"success": {
+			  "type": "boolean"
+			},
+			"data": {
+			  "$ref": "#/components/schemas/UserAccountResponse"
+			},
+			"message": {
+			  "type": "string"
+			},
+			"errorCode": {
+			  "type": "string"
+			},
+			"timestamp": {
+			  "type": "string",
+			  "format": "date-time"
+			}
+		  }
+		},
+		"UserAccountResponse": {
+		  "type": "object",
+		  "properties": {
+			"id": {
+			  "type": "string",
+			  "format": "uuid"
+			},
+			"tenantId": {
+			  "type": "string",
+			  "format": "uuid"
+			},
+			"actorId": {
+			  "type": "string",
+			  "format": "uuid"
+			},
+			"username": {
+			  "type": "string"
+			},
+			"email": {
+			  "type": "string"
+			},
+			"phoneNumber": {
+			  "type": "string"
+			},
+			"authProvider": {
+			  "type": "string"
+			},
+			"externalSubject": {
+			  "type": "string"
+			},
+			"status": {
+			  "type": "string"
+			},
+			"plan": {
+			  "type": "string"
+			},
+			"onboardingStatus": {
+			  "type": "string"
+			},
+			"onboardingStep": {
+			  "type": "integer",
+			  "format": "int32"
+			},
+			"accountType": {
+			  "type": "string"
+			},
+			"businessType": {
+			  "type": "string"
+			},
+			"onboardingPayload": {
+			  "type": "string"
+			},
+			"emailVerified": {
+			  "type": "boolean"
+			},
+			"emailVerifiedAt": {
+			  "type": "string",
+			  "format": "date-time"
+			},
+			"phoneVerified": {
+			  "type": "boolean"
+			},
+			"phoneVerifiedAt": {
+			  "type": "string",
+			  "format": "date-time"
+			},
+			"mfaEnabled": {
+			  "type": "boolean"
+			},
+			"mfaChannel": {
+			  "type": "string"
+			},
+			"avatarId": {
+			  "type": "string",
+			  "format": "uuid"
+			},
+			"organizations": {
+			  "type": "array",
+			  "items": {
+				"$ref": "#/components/schemas/UserOrganizationAccessResponse"
+			  }
+			}
+		  }
+		},
+		"UserOrganizationAccessResponse": {
+		  "type": "object",
+		  "properties": {
+			"organizationId": {
+			  "type": "string",
+			  "format": "uuid"
+			},
+			"organizationCode": {
+			  "type": "string"
+			},
+			"shortName": {
+			  "type": "string"
+			},
+			"longName": {
+			  "type": "string"
+			},
+			"displayName": {
+			  "type": "string"
+			},
+			"legalName": {
+			  "type": "string"
+			},
+			"services": {
+			  "type": "array",
+			  "items": {
+				"type": "string"
+			  }
+			}
+		  }
+		},
+		"UpdateOnboardingRequest": {
+		  "type": "object",
+		  "properties": {
+			"step": {
+			  "type": "integer",
+			  "format": "int32",
+			  "minimum": 0
+			},
+			"status": {
+			  "type": "string"
+			}
+		  }
+		},
+		"UpdateIdentityOnboardingRequest": {
+		  "type": "object",
+		  "properties": {
+			"accountType": {
+			  "type": "string",
+			  "minLength": 1
+			},
+			"businessType": {
+			  "type": "string"
+			},
+			"step": {
+			  "type": "integer",
+			  "format": "int32",
+			  "minimum": 0
+			},
+			"status": {
+			  "type": "string"
+			},
+			"data": {
+			  "type": "object",
+			  "additionalProperties": {
+  
+			  }
+			}
+		  },
+		  "required": [
+			"accountType"
+		  ]
+		},
+		"UpdateAvatarRequest": {
+		  "type": "object",
+		  "properties": {
+			"avatarId": {
+			  "type": "string",
+			  "format": "uuid"
+			}
+		  }
+		},
+		"AdminResetPasswordResponse": {
+		  "type": "object",
+		  "properties": {
+			"userId": {
+			  "type": "string",
+			  "format": "uuid"
+			},
+			"username": {
+			  "type": "string"
+			},
+			"email": {
+			  "type": "string"
+			},
+			"temporaryPassword": {
+			  "type": "string"
+			}
+		  }
+		},
+		"ApiResponseAdminResetPasswordResponse": {
+		  "type": "object",
+		  "properties": {
+			"success": {
+			  "type": "boolean"
+			},
+			"data": {
+			  "$ref": "#/components/schemas/AdminResetPasswordResponse"
+			},
+			"message": {
+			  "type": "string"
+			},
+			"errorCode": {
+			  "type": "string"
+			},
+			"timestamp": {
+			  "type": "string",
+			  "format": "date-time"
+			}
+		  }
+		},
+		"PublicSignUpRequest": {
+		  "type": "object",
+		  "properties": {
+			"tenantId": {
+			  "type": "string",
+			  "format": "uuid"
+			},
+			"signUpSelectionToken": {
+			  "type": "string"
+			},
+			"contextId": {
+			  "type": "string"
+			},
+			"firstName": {
+			  "type": "string",
+			  "minLength": 1
+			},
+			"lastName": {
+			  "type": "string",
+			  "minLength": 1
+			},
+			"username": {
+			  "type": "string"
+			},
+			"email": {
+			  "type": "string",
+			  "format": "email",
+			  "minLength": 1
+			},
+			"phoneNumber": {
+			  "type": "string"
+			},
+			"password": {
+			  "type": "string"
+			},
+			"socialProvider": {
+			  "type": "string"
+			},
+			"externalSubject": {
+			  "type": "string"
+			},
+			"captchaVerificationToken": {
+			  "type": "string"
+			},
+			"accountType": {
+			  "type": "string"
+			},
+			"businessType": {
+			  "type": "string"
+			},
+			"onboardingData": {
+			  "type": "object",
+			  "additionalProperties": {
+  
+			  }
+			}
+		  },
+		  "required": [
+			"email",
+			"firstName",
+			"lastName"
+		  ]
+		},
+		"ApiResponseObject": {
+		  "type": "object",
+		  "properties": {
+			"success": {
+			  "type": "boolean"
+			},
+			"data": {
+  
+			},
+			"message": {
+			  "type": "string"
+			},
+			"errorCode": {
+			  "type": "string"
+			},
+			"timestamp": {
+			  "type": "string",
+			  "format": "date-time"
+			}
+		  }
+		},
+		"SelectLoginContextRequest": {
+		  "type": "object",
+		  "properties": {
+			"selectionToken": {
+			  "type": "string",
+			  "minLength": 1
+			},
+			"contextId": {
+			  "type": "string",
+			  "minLength": 1
+			},
+			"organizationId": {
+			  "type": "string",
+			  "format": "uuid"
+			}
+		  },
+		  "required": [
+			"contextId",
+			"selectionToken"
+		  ]
+		},
+		"ApiResponseContextualLoginResponse": {
+		  "type": "object",
+		  "properties": {
+			"success": {
+			  "type": "boolean"
+			},
+			"data": {
+			  "$ref": "#/components/schemas/ContextualLoginResponse"
+			},
+			"message": {
+			  "type": "string"
+			},
+			"errorCode": {
+			  "type": "string"
+			},
+			"timestamp": {
+			  "type": "string",
+			  "format": "date-time"
+			}
+		  }
+		},
+		"ContextualLoginResponse": {
+		  "type": "object",
+		  "properties": {
+			"selectedTenantId": {
+			  "type": "string",
+			  "format": "uuid"
+			},
+			"selectedOrganizationId": {
+			  "type": "string",
+			  "format": "uuid"
+			},
+			"session": {
+			  "$ref": "#/components/schemas/LoginResponse"
+			}
+		  }
+		},
+		"LoginResponse": {
+		  "type": "object",
+		  "properties": {
+			"id": {
+			  "type": "string",
+			  "format": "uuid"
+			},
+			"tenantId": {
+			  "type": "string",
+			  "format": "uuid"
+			},
+			"actorId": {
+			  "type": "string",
+			  "format": "uuid"
+			},
+			"username": {
+			  "type": "string"
+			},
+			"email": {
+			  "type": "string"
+			},
+			"phoneNumber": {
+			  "type": "string"
+			},
+			"authProvider": {
+			  "type": "string"
+			},
+			"externalSubject": {
+			  "type": "string"
+			},
+			"status": {
+			  "type": "string"
+			},
+			"plan": {
+			  "type": "string"
+			},
+			"onboardingStatus": {
+			  "type": "string"
+			},
+			"onboardingStep": {
+			  "type": "integer",
+			  "format": "int32"
+			},
+			"accountType": {
+			  "type": "string"
+			},
+			"businessType": {
+			  "type": "string"
+			},
+			"onboardingPayload": {
+			  "type": "string"
+			},
+			"emailVerified": {
+			  "type": "boolean"
+			},
+			"emailVerifiedAt": {
+			  "type": "string",
+			  "format": "date-time"
+			},
+			"phoneVerified": {
+			  "type": "boolean"
+			},
+			"phoneVerifiedAt": {
+			  "type": "string",
+			  "format": "date-time"
+			},
+			"mfaEnabled": {
+			  "type": "boolean"
+			},
+			"mfaChannel": {
+			  "type": "string"
+			},
+			"accessToken": {
+			  "type": "string"
+			},
+			"sessionToken": {
+			  "type": "string"
+			},
+			"refreshToken": {
+			  "type": "string"
+			},
+			"tokenType": {
+			  "type": "string"
+			},
+			"expiresInSeconds": {
+			  "type": "integer",
+			  "format": "int64"
+			},
+			"refreshExpiresInSeconds": {
+			  "type": "integer",
+			  "format": "int64"
+			},
+			"refreshExpiresAt": {
+			  "type": "string",
+			  "format": "date-time"
+			},
+			"sharedSession": {
+			  "$ref": "#/components/schemas/SharedSsoSessionResponse"
+			},
+			"authorities": {
+			  "type": "array",
+			  "items": {
+				"type": "string"
+			  },
+			  "uniqueItems": true
+			},
+			"organizations": {
+			  "type": "array",
+			  "items": {
+				"$ref": "#/components/schemas/UserOrganizationAccessResponse"
+			  }
+			}
+		  }
+		},
+		"SharedSsoSessionResponse": {
+		  "type": "object",
+		  "properties": {
+			"token": {
+			  "type": "string"
+			},
+			"tokenType": {
+			  "type": "string"
+			},
+			"expiresInSeconds": {
+			  "type": "integer",
+			  "format": "int64"
+			}
+		  }
+		},
+		"ResetPasswordRequest": {
+		  "type": "object",
+		  "properties": {
+			"resetToken": {
+			  "type": "string",
+			  "minLength": 1
+			},
+			"newPassword": {
+			  "type": "string",
+			  "minLength": 1
+			}
+		  },
+		  "required": [
+			"newPassword",
+			"resetToken"
+		  ]
+		},
+		"RegisterUserRequest": {
+		  "type": "object",
+		  "properties": {
+			"actorId": {
+			  "type": "string",
+			  "format": "uuid"
+			},
+			"username": {
+			  "type": "string",
+			  "minLength": 1
+			},
+			"email": {
+			  "type": "string",
+			  "format": "email",
+			  "minLength": 1
+			},
+			"phoneNumber": {
+			  "type": "string"
+			},
+			"password": {
+			  "type": "string"
+			},
+			"authProvider": {
+			  "type": "string",
+			  "minLength": 1
+			},
+			"externalSubject": {
+			  "type": "string"
+			}
+		  },
+		  "required": [
+			"authProvider",
+			"email",
+			"username"
+		  ]
+		},
+		"RefreshTokenRequest": {
+		  "type": "object",
+		  "properties": {
+			"refreshToken": {
+			  "type": "string",
+			  "minLength": 1
+			}
+		  },
+		  "required": [
+			"refreshToken"
+		  ]
+		},
+		"ApiResponseRefreshTokenResponse": {
+		  "type": "object",
+		  "properties": {
+			"success": {
+			  "type": "boolean"
+			},
+			"data": {
+			  "$ref": "#/components/schemas/RefreshTokenResponse"
+			},
+			"message": {
+			  "type": "string"
+			},
+			"errorCode": {
+			  "type": "string"
+			},
+			"timestamp": {
+			  "type": "string",
+			  "format": "date-time"
+			}
+		  }
+		},
+		"RefreshTokenResponse": {
+		  "type": "object",
+		  "properties": {
+			"accessToken": {
+			  "type": "string"
+			},
+			"refreshToken": {
+			  "type": "string"
+			},
+			"tokenType": {
+			  "type": "string"
+			},
+			"accessExpiresInSeconds": {
+			  "type": "integer",
+			  "format": "int64"
+			},
+			"refreshExpiresInSeconds": {
+			  "type": "integer",
+			  "format": "int64"
+			},
+			"refreshExpiresAt": {
+			  "type": "string",
+			  "format": "date-time"
+			}
+		  }
+		},
+		"IssueOtpRequest": {
+		  "type": "object",
+		  "properties": {
+			"channel": {
+			  "type": "string",
+			  "minLength": 1
+			},
+			"recipient": {
+			  "type": "string",
+			  "minLength": 1
+			},
+			"purpose": {
+			  "type": "string"
+			}
+		  },
+		  "required": [
+			"channel",
+			"recipient"
+		  ]
+		},
+		"ApiResponseOtpChallengeResponse": {
+		  "type": "object",
+		  "properties": {
+			"success": {
+			  "type": "boolean"
+			},
+			"data": {
+			  "$ref": "#/components/schemas/OtpChallengeResponse"
+			},
+			"message": {
+			  "type": "string"
+			},
+			"errorCode": {
+			  "type": "string"
+			},
+			"timestamp": {
+			  "type": "string",
+			  "format": "date-time"
+			}
+		  }
+		},
+		"OtpChallengeResponse": {
+		  "type": "object",
+		  "properties": {
+			"deliveryMode": {
+			  "type": "string"
+			},
+			"challengeToken": {
+			  "type": "string"
+			},
+			"codePreview": {
+			  "type": "string"
+			},
+			"expiresInSeconds": {
+			  "type": "integer",
+			  "format": "int64"
+			}
+		  }
+		},
+		"ConfirmMfaRequest": {
+		  "type": "object",
+		  "properties": {
+			"challengeToken": {
+			  "type": "string",
+			  "minLength": 1
+			},
+			"code": {
+			  "type": "string",
+			  "minLength": 1
+			}
+		  },
+		  "required": [
+			"challengeToken",
+			"code"
+		  ]
+		},
+		"IssuePasswordResetRequest": {
+		  "type": "object",
+		  "properties": {
+			"selectionToken": {
+			  "type": "string",
+			  "minLength": 1
+			},
+			"contextId": {
+			  "type": "string",
+			  "minLength": 1
+			}
+		  },
+		  "required": [
+			"contextId",
+			"selectionToken"
+		  ]
+		},
+		"ApiResponseIssuedAuthChallengeResponse": {
+		  "type": "object",
+		  "properties": {
+			"success": {
+			  "type": "boolean"
+			},
+			"data": {
+			  "$ref": "#/components/schemas/IssuedAuthChallengeResponse"
+			},
+			"message": {
+			  "type": "string"
+			},
+			"errorCode": {
+			  "type": "string"
+			},
+			"timestamp": {
+			  "type": "string",
+			  "format": "date-time"
+			}
+		  }
+		},
+		"IssuedAuthChallengeResponse": {
+		  "type": "object",
+		  "properties": {
+			"deliveryMode": {
+			  "type": "string"
+			},
+			"challengeTokenPreview": {
+			  "type": "string"
+			},
+			"expiresInSeconds": {
+			  "type": "integer",
+			  "format": "int64"
+			}
+		  }
+		},
+		"VerifyOtpRequest": {
+		  "type": "object",
+		  "properties": {
+			"challengeToken": {
+			  "type": "string",
+			  "minLength": 1
+			},
+			"code": {
+			  "type": "string",
+			  "minLength": 1
+			},
+			"purpose": {
+			  "type": "string"
+			}
+		  },
+		  "required": [
+			"challengeToken",
+			"code"
+		  ]
+		},
+		"ApiResponseOtpVerificationResponse": {
+		  "type": "object",
+		  "properties": {
+			"success": {
+			  "type": "boolean"
+			},
+			"data": {
+			  "$ref": "#/components/schemas/OtpVerificationResponse"
+			},
+			"message": {
+			  "type": "string"
+			},
+			"errorCode": {
+			  "type": "string"
+			},
+			"timestamp": {
+			  "type": "string",
+			  "format": "date-time"
+			}
+		  }
+		},
+		"OtpVerificationResponse": {
+		  "type": "object",
+		  "properties": {
+			"verified": {
+			  "type": "boolean"
+			},
+			"channel": {
+			  "type": "string"
+			},
+			"recipient": {
+			  "type": "string"
+			},
+			"purpose": {
+			  "type": "string"
+			}
+		  }
+		},
+		"EnableMfaRequest": {
+		  "type": "object",
+		  "properties": {
+			"channel": {
+			  "type": "string",
+			  "minLength": 1
+			}
+		  },
+		  "required": [
+			"channel"
+		  ]
+		},
+		"ApiResponseVoid": {
+		  "type": "object",
+		  "properties": {
+			"success": {
+			  "type": "boolean"
+			},
+			"data": {
+  
+			},
+			"message": {
+			  "type": "string"
+			},
+			"errorCode": {
+			  "type": "string"
+			},
+			"timestamp": {
+			  "type": "string",
+			  "format": "date-time"
+			}
+		  }
+		},
+		"LoginRequest": {
+		  "type": "object",
+		  "properties": {
+			"principal": {
+			  "type": "string",
+			  "minLength": 1
+			},
+			"password": {
+			  "type": "string",
+			  "minLength": 1
+			}
+		  },
+		  "required": [
+			"password",
+			"principal"
+		  ]
+		},
+		"ConfirmMfaLoginRequest": {
+		  "type": "object",
+		  "properties": {
+			"mfaToken": {
+			  "type": "string",
+			  "minLength": 1
+			},
+			"code": {
+			  "type": "string",
+			  "minLength": 1
+			}
+		  },
+		  "required": [
+			"code",
+			"mfaToken"
+		  ]
+		},
+		"ApiResponseLoginResponse": {
+		  "type": "object",
+		  "properties": {
+			"success": {
+			  "type": "boolean"
+			},
+			"data": {
+			  "$ref": "#/components/schemas/LoginResponse"
+			},
+			"message": {
+			  "type": "string"
+			},
+			"errorCode": {
+			  "type": "string"
+			},
+			"timestamp": {
+			  "type": "string",
+			  "format": "date-time"
+			}
+		  }
+		},
+		"IdentifyAccountRequest": {
+		  "type": "object",
+		  "properties": {
+			"principal": {
+			  "type": "string",
+			  "minLength": 1
+			}
+		  },
+		  "required": [
+			"principal"
+		  ]
+		},
+		"ApiResponseIdentifyAccountResponse": {
+		  "type": "object",
+		  "properties": {
+			"success": {
+			  "type": "boolean"
+			},
+			"data": {
+			  "$ref": "#/components/schemas/IdentifyAccountResponse"
+			},
+			"message": {
+			  "type": "string"
+			},
+			"errorCode": {
+			  "type": "string"
+			},
+			"timestamp": {
+			  "type": "string",
+			  "format": "date-time"
+			}
+		  }
+		},
+		"IdentifyAccountResponse": {
+		  "type": "object",
+		  "properties": {
+			"principal": {
+			  "type": "string"
+			},
+			"accountExists": {
+			  "type": "boolean"
+			},
+			"nextStep": {
+			  "type": "string"
+			},
+			"matchingAccountCount": {
+			  "type": "integer",
+			  "format": "int64"
+			}
+		  }
+		},
+		"ForgotPasswordRequest": {
+		  "type": "object",
+		  "properties": {
+			"principal": {
+			  "type": "string",
+			  "minLength": 1
+			}
+		  },
+		  "required": [
+			"principal"
+		  ]
+		},
+		"ApiResponseForgotPasswordResponse": {
+		  "type": "object",
+		  "properties": {
+			"success": {
+			  "type": "boolean"
+			},
+			"data": {
+			  "$ref": "#/components/schemas/ForgotPasswordResponse"
+			},
+			"message": {
+			  "type": "string"
+			},
+			"errorCode": {
+			  "type": "string"
+			},
+			"timestamp": {
+			  "type": "string",
+			  "format": "date-time"
+			}
+		  }
+		},
+		"ForgotPasswordResponse": {
+		  "type": "object",
+		  "properties": {
+			"principal": {
+			  "type": "string"
+			},
+			"matchingAccountCount": {
+			  "type": "integer",
+			  "format": "int64"
+			},
+			"selectionToken": {
+			  "type": "string"
+			},
+			"selectionTokenExpiresInSeconds": {
+			  "type": "integer",
+			  "format": "int64"
+			},
+			"contexts": {
+			  "type": "array",
+			  "items": {
+				"$ref": "#/components/schemas/PasswordResetContextResponse"
+			  }
+			}
+		  }
+		},
+		"PasswordResetContextResponse": {
+		  "type": "object",
+		  "properties": {
+			"contextId": {
+			  "type": "string"
+			},
+			"tenantId": {
+			  "type": "string",
+			  "format": "uuid"
+			},
+			"userId": {
+			  "type": "string",
+			  "format": "uuid"
+			},
+			"actorId": {
+			  "type": "string",
+			  "format": "uuid"
+			},
+			"username": {
+			  "type": "string"
+			},
+			"email": {
+			  "type": "string"
+			}
+		  }
+		},
+		"ConfirmEmailVerificationRequest": {
+		  "type": "object",
+		  "properties": {
+			"verificationToken": {
+			  "type": "string",
+			  "minLength": 1
+			}
+		  },
+		  "required": [
+			"verificationToken"
+		  ]
+		},
+		"DiscoverSignUpContextsRequest": {
+		  "type": "object",
+		  "properties": {
+			"organizationCode": {
+			  "type": "string",
+			  "minLength": 1
+			}
+		  },
+		  "required": [
+			"organizationCode"
+		  ]
+		},
+		"ApiResponseDiscoverSignUpContextsResponse": {
+		  "type": "object",
+		  "properties": {
+			"success": {
+			  "type": "boolean"
+			},
+			"data": {
+			  "$ref": "#/components/schemas/DiscoverSignUpContextsResponse"
+			},
+			"message": {
+			  "type": "string"
+			},
+			"errorCode": {
+			  "type": "string"
+			},
+			"timestamp": {
+			  "type": "string",
+			  "format": "date-time"
+			}
+		  }
+		},
+		"DiscoverSignUpContextsResponse": {
+		  "type": "object",
+		  "properties": {
+			"selectionToken": {
+			  "type": "string"
+			},
+			"expiresInSeconds": {
+			  "type": "integer",
+			  "format": "int64"
+			},
+			"contexts": {
+			  "type": "array",
+			  "items": {
+				"$ref": "#/components/schemas/SelectableSignUpContextResponse"
+			  }
+			}
+		  }
+		},
+		"SelectableSignUpContextResponse": {
+		  "type": "object",
+		  "properties": {
+			"contextId": {
+			  "type": "string"
+			},
+			"tenantId": {
+			  "type": "string",
+			  "format": "uuid"
+			},
+			"organizationId": {
+			  "type": "string",
+			  "format": "uuid"
+			},
+			"organizationCode": {
+			  "type": "string"
+			},
+			"organizationName": {
+			  "type": "string"
+			},
+			"organizationType": {
+			  "type": "string"
+			}
+		  }
+		},
+		"ApiResponseDiscoverLoginContextsResponse": {
+		  "type": "object",
+		  "properties": {
+			"success": {
+			  "type": "boolean"
+			},
+			"data": {
+			  "$ref": "#/components/schemas/DiscoverLoginContextsResponse"
+			},
+			"message": {
+			  "type": "string"
+			},
+			"errorCode": {
+			  "type": "string"
+			},
+			"timestamp": {
+			  "type": "string",
+			  "format": "date-time"
+			}
+		  }
+		},
+		"DiscoverLoginContextsResponse": {
+		  "type": "object",
+		  "properties": {
+			"selectionToken": {
+			  "type": "string"
+			},
+			"expiresInSeconds": {
+			  "type": "integer",
+			  "format": "int64"
+			},
+			"contexts": {
+			  "type": "array",
+			  "items": {
+				"$ref": "#/components/schemas/DiscoveredLoginContextResponse"
+			  }
+			}
+		  }
+		},
+		"DiscoveredLoginContextResponse": {
+		  "type": "object",
+		  "properties": {
+			"contextId": {
+			  "type": "string"
+			},
+			"tenantId": {
+			  "type": "string",
+			  "format": "uuid"
+			},
+			"userId": {
+			  "type": "string",
+			  "format": "uuid"
+			},
+			"actorId": {
+			  "type": "string",
+			  "format": "uuid"
+			},
+			"organizations": {
+			  "type": "array",
+			  "items": {
+				"$ref": "#/components/schemas/UserOrganizationAccessResponse"
+			  }
+			}
+		  }
+		},
+		"ChangePasswordRequest": {
+		  "type": "object",
+		  "properties": {
+			"currentPassword": {
+			  "type": "string",
+			  "minLength": 1
+			},
+			"newPassword": {
+			  "type": "string",
+			  "minLength": 1
+			}
+		  },
+		  "required": [
+			"currentPassword",
+			"newPassword"
+		  ]
+		},
+		"ApiResponseCaptchaChallengeResponse": {
+		  "type": "object",
+		  "properties": {
+			"success": {
+			  "type": "boolean"
+			},
+			"data": {
+			  "$ref": "#/components/schemas/CaptchaChallengeResponse"
+			},
+			"message": {
+			  "type": "string"
+			},
+			"errorCode": {
+			  "type": "string"
+			},
+			"timestamp": {
+			  "type": "string",
+			  "format": "date-time"
+			}
+		  }
+		},
+		"CaptchaChallengeResponse": {
+		  "type": "object",
+		  "properties": {
+			"captchaToken": {
+			  "type": "string"
+			},
+			"prompt": {
+			  "type": "string"
+			},
+			"answerPreview": {
+			  "type": "string"
+			},
+			"expiresInSeconds": {
+			  "type": "integer",
+			  "format": "int64"
+			}
+		  }
+		},
+		"VerifyCaptchaRequest": {
+		  "type": "object",
+		  "properties": {
+			"captchaToken": {
+			  "type": "string",
+			  "minLength": 1
+			},
+			"answer": {
+			  "type": "string",
+			  "minLength": 1
+			}
+		  },
+		  "required": [
+			"answer",
+			"captchaToken"
+		  ]
+		},
+		"ApiResponseCaptchaVerificationResponse": {
+		  "type": "object",
+		  "properties": {
+			"success": {
+			  "type": "boolean"
+			},
+			"data": {
+			  "$ref": "#/components/schemas/CaptchaVerificationResponse"
+			},
+			"message": {
+			  "type": "string"
+			},
+			"errorCode": {
+			  "type": "string"
+			},
+			"timestamp": {
+			  "type": "string",
+			  "format": "date-time"
+			}
+		  }
+		},
+		"CaptchaVerificationResponse": {
+		  "type": "object",
+		  "properties": {
+			"captchaVerificationToken": {
+			  "type": "string"
+			},
+			"expiresInSeconds": {
+			  "type": "integer",
+			  "format": "int64"
+			}
+		  }
+		},
+		"ApiResponseListUserMembershipResponse": {
+		  "type": "object",
+		  "properties": {
+			"success": {
+			  "type": "boolean"
+			},
+			"data": {
+			  "type": "array",
+			  "items": {
+				"$ref": "#/components/schemas/UserMembershipResponse"
+			  }
+			},
+			"message": {
+			  "type": "string"
+			},
+			"errorCode": {
+			  "type": "string"
+			},
+			"timestamp": {
+			  "type": "string",
+			  "format": "date-time"
+			}
+		  }
+		},
+		"UserMembershipResponse": {
+		  "type": "object",
+		  "properties": {
+			"tenantId": {
+			  "type": "string",
+			  "format": "uuid"
+			},
+			"organizationId": {
+			  "type": "string",
+			  "format": "uuid"
+			},
+			"organizationCode": {
+			  "type": "string"
+			},
+			"organizationName": {
+			  "type": "string"
+			},
+			"roleCode": {
+			  "type": "string"
+			},
+			"roleName": {
+			  "type": "string"
+			},
+			"scopeType": {
+			  "type": "string"
+			},
+			"permissions": {
+			  "type": "array",
+			  "items": {
+				"type": "string"
+			  }
+			}
+		  }
+		}
+	  },
+	  "securitySchemes": {
+		"ClientId": {
+		  "type": "apiKey",
+		  "description": "Client application identifier for server-to-server access",
+		  "name": "X-Client-Id",
+		  "in": "header"
+		},
+		"ApiKey": {
+		  "type": "apiKey",
+		  "description": "Client application secret for server-to-server access",
+		  "name": "X-Api-Key",
+		  "in": "header"
+		},
+		"BearerAuth": {
+		  "type": "http",
+		  "description": "JWT access token returned by /api/auth/login",
+		  "scheme": "bearer",
+		  "bearerFormat": "JWT"
+		}
+	  }
+	}
+  }

@@ -1,0 +1,112 @@
+import { Badge } from "@/components/ui/badge";
+import {
+    formatBillingPeriodLabel,
+    formatQuotedPrice,
+    getPlanLabel,
+    getTargetTypeLabel,
+    type BillingPeriod,
+} from "@/lib/commercial-plan-display";
+import type { components } from "@/types/schemas-payment";
+
+type CommercialPlanResponse = components["schemas"]["CommercialPlanResponse"];
+type CommercialPlanQuoteResponse =
+  components["schemas"]["CommercialPlanQuoteResponse"];
+
+type CommercialPlanDetailsProps = {
+  plan: CommercialPlanResponse;
+  quote?: CommercialPlanQuoteResponse | null;
+  quoteLoading?: boolean;
+  billingPeriod?: BillingPeriod;
+  className?: string;
+};
+
+function CodeList({
+  title,
+  codes,
+}: {
+  title: string;
+  codes: string[];
+}) {
+  if (codes.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="yypay:space-y-2">
+      <p className="yypay:text-xs yypay:font-medium yypay:uppercase yypay:tracking-wide yypay:text-secondary">
+        {title}
+      </p>
+      <div className="yypay:flex yypay:flex-wrap yypay:gap-2">
+        {codes.map((code) => (
+          <Badge key={code} variant="secondary">
+            {code}
+          </Badge>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function CommercialPlanDetails({
+  plan,
+  quote,
+  quoteLoading = false,
+  billingPeriod = "MONTHLY",
+  className,
+}: CommercialPlanDetailsProps) {
+  const targetTypeLabel = getTargetTypeLabel(plan.targetType);
+  const quotedPrice = formatQuotedPrice(
+    quote?.total,
+    quote?.currency,
+    billingPeriod,
+  );
+
+  return (
+    <div className={className ?? "yypay:space-y-4"}>
+      <div className="yypay:flex yypay:flex-wrap yypay:gap-2">
+        {plan.systemDefault && <Badge>Plan par défaut</Badge>}
+        {targetTypeLabel && <Badge variant="secondary">{targetTypeLabel}</Badge>}
+        {plan.code && (
+          <Badge variant="secondary" className="yypay:font-mono">
+            {plan.code}
+          </Badge>
+        )}
+      </div>
+
+      {plan.description && (
+        <p className="yypay:text-sm yypay:text-secondary">{plan.description}</p>
+      )}
+
+      <div className="yypay:rounded-lg yypay:border yypay:border-border yypay:bg-muted/40 yypay:p-3">
+        <p className="yypay:text-xs yypay:font-medium yypay:uppercase yypay:tracking-wide yypay:text-muted-foreground">
+          Tarif {formatBillingPeriodLabel(billingPeriod).toLowerCase()}
+        </p>
+        {quoteLoading ? (
+          <p className="yypay:mt-1 yypay:text-sm yypay:text-muted-foreground">
+            Calcul du devis…
+          </p>
+        ) : quotedPrice ? (
+          <p className="yypay:mt-1 yypay:text-2xl yypay:font-bold yypay:text-foreground">
+            {quotedPrice}
+          </p>
+        ) : (
+          <p className="yypay:mt-1 yypay:text-sm yypay:text-muted-foreground">
+            Devis indisponible pour {getPlanLabel(plan)}.
+          </p>
+        )}
+        <p className="yypay:mt-2 yypay:text-xs yypay:text-muted-foreground">
+          Montant calculé côté serveur via{" "}
+          <span className="yypay:font-mono">POST /api/plans/&#123;planCode&#125;/quote</span>
+          .
+        </p>
+      </div>
+
+      <CodeList title="Packs inclus" codes={plan.packCodes ?? []} />
+      <CodeList title="Services inclus" codes={plan.serviceCodes ?? []} />
+      <CodeList
+        title="Add-ons compatibles"
+        codes={plan.compatibleAddOnCodes ?? []}
+      />
+    </div>
+  );
+}

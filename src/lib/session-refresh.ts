@@ -1,0 +1,1 @@
+export const SESSION_REFRESH_INTERVAL_MS = 14 * 60 * 1000;
