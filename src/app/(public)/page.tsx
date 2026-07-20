@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useCommercialPlanQuotes } from "@/hooks/use-commercial-plan-quotes";
+import { appPath } from "@/lib/auth-wizard-navigation";
 import { bffGet } from "@/lib/bff-client";
 import type { BillingPeriod } from "@/lib/commercial-plan-display";
 import type { components } from "@/types/schemas-payment";
@@ -192,7 +193,7 @@ export default function LandingPage() {
               onBillingPeriodChange={setBillingPeriod}
               getCtaLabel={() => "Commencer"}
               onSelectPlan={() => {
-                globalThis.location.assign("/login");
+                globalThis.location.assign(appPath("/login"));
               }}
             />
           </div>
