@@ -2,6 +2,8 @@
 
 Ce document décrit comment intégrer **YowYob Payment (yy-pay)** depuis un service externe (ERP, marketplace, portail métier, etc.) pour encaisser un paiement dans une **fenêtre popup**, avec notification webhook vers votre organisation.
 
+> **Moyen de paiement — depuis le portefeuille.** L'achat est réglé **avec le solde du portefeuille YowYob** de l'utilisateur connecté, jamais par Orange Money / MTN MoMo / Stripe en direct. Si le solde ne couvre pas le montant, la fenêtre propose de **recharger exactement le différentiel manquant** (là, et seulement là, un opérateur mobile intervient pour créditer le portefeuille), puis l'utilisateur revient régler l'achat depuis son solde reconstitué. La connexion exige le **MFA** : tout détenteur de portefeuille doit l'avoir activé. Le contrat d'ouverture de la popup (paramètres, `postMessage`, webhook) reste inchangé — seul le mécanisme interne de règlement diffère.
+
 ---
 
 ## Table des matières
