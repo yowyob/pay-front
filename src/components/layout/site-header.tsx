@@ -11,15 +11,9 @@ import {
     SheetTrigger,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { ChevronRight, Menu, Wallet } from "lucide-react";
+import { Menu, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-
-const NAV_ITEMS = [
-  { href: "/#accueil", label: "Accueil" },
-  { href: "/#documentation", label: "Documentation" },
-  { href: "/#tarifs", label: "Tarifs" },
-] as const;
 
 type SiteHeaderProps = {
   showLogin?: boolean;
@@ -42,18 +36,6 @@ export function SiteHeader({ showLogin = true }: SiteHeaderProps) {
             YowYob Payment
           </span>
         </Link>
-
-        <nav className="yypay:hidden yypay:items-center yypay:gap-8 md:yypay:flex">
-          {NAV_ITEMS.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="yypay:text-sm yypay:font-medium yypay:text-muted-foreground hover:yypay:text-foreground"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
 
         <div className="yypay:flex yypay:items-center yypay:gap-1 sm:yypay:gap-2">
           <ThemeToggle />
@@ -89,26 +71,7 @@ export function SiteHeader({ showLogin = true }: SiteHeaderProps) {
               </SheetHeader>
 
               <nav className="yypay:flex yypay:flex-1 yypay:flex-col yypay:gap-1 yypay:px-4 yypay:py-6">
-                {NAV_ITEMS.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setOpen(false)}
-                    className={cn(
-                      "yypay:flex yypay:items-center yypay:justify-between yypay:rounded-lg yypay:px-4 yypay:py-3.5",
-                      "yypay:text-base yypay:font-medium yypay:text-foreground",
-                      "hover:yypay:bg-muted active:yypay:bg-muted",
-                    )}
-                  >
-                    {item.label}
-                    <ChevronRight
-                      className="yypay:h-4 yypay:w-4 yypay:text-muted-foreground"
-                      aria-hidden
-                    />
-                  </Link>
-                ))}
-
-                <div className="yypay:mt-4 yypay:flex yypay:items-center yypay:justify-between yypay:rounded-lg yypay:border yypay:border-border yypay:px-4 yypay:py-3">
+                <div className="yypay:flex yypay:items-center yypay:justify-between yypay:rounded-lg yypay:border yypay:border-border yypay:px-4 yypay:py-3">
                   <span className="yypay:text-sm yypay:font-medium">Thème</span>
                   <ThemeToggle />
                 </div>
