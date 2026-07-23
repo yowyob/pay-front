@@ -10,6 +10,7 @@ import {
     SheetTitle,
     SheetTrigger,
 } from "@/components/ui/sheet";
+import { YOWAUTH_LOGIN_URL } from "@/lib/external-auth";
 import { cn } from "@/lib/utils";
 import { Menu, Wallet } from "lucide-react";
 import Link from "next/link";
@@ -42,17 +43,9 @@ export function SiteHeader({ showLogin = true }: SiteHeaderProps) {
 
           <div className="yypay:hidden yypay:items-center yypay:gap-2 md:yypay:flex">
             {showLogin && (
-              <>
-                <Link
-                  href="/login"
-                  className="yypay:text-sm yypay:font-medium yypay:text-muted-foreground hover:yypay:text-foreground"
-                >
-                  Se connecter
-                </Link>
-                <Button asChild size="sm">
-                  <Link href="/login">Créer un compte</Link>
-                </Button>
-              </>
+              <Button asChild size="sm">
+                <a href={YOWAUTH_LOGIN_URL}>Se connecter</a>
+              </Button>
             )}
           </div>
 
@@ -79,9 +72,8 @@ export function SiteHeader({ showLogin = true }: SiteHeaderProps) {
                 {showLogin && (
                   <>
                     <Separator className="yypay:my-4" />
-                    <Link
-                      href="/login"
-                      onClick={() => setOpen(false)}
+                    <a
+                      href={YOWAUTH_LOGIN_URL}
                       className={cn(
                         "yypay:inline-flex yypay:h-11 yypay:items-center yypay:justify-center",
                         "yypay:rounded-lg yypay:bg-primary yypay:px-4",
@@ -90,19 +82,7 @@ export function SiteHeader({ showLogin = true }: SiteHeaderProps) {
                       )}
                     >
                       Se connecter
-                    </Link>
-                    <Link
-                      href="/login"
-                      onClick={() => setOpen(false)}
-                      className={cn(
-                        "yypay:inline-flex yypay:h-11 yypay:items-center yypay:justify-center",
-                        "yypay:rounded-lg yypay:border yypay:border-border yypay:px-4",
-                        "yypay:text-sm yypay:font-medium yypay:text-foreground",
-                        "hover:yypay:bg-muted",
-                      )}
-                    >
-                      Créer un compte
-                    </Link>
+                    </a>
                   </>
                 )}
               </nav>

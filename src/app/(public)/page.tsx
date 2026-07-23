@@ -8,8 +8,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { YOWAUTH_LOGIN_URL } from "@/lib/external-auth";
 import { Building2, CreditCard, Lock, ShoppingCart } from "lucide-react";
-import Link from "next/link";
 
 const STEPS = [
   {
@@ -49,7 +49,7 @@ export default function LandingPage() {
             </h1>
             <div className="yypay:mt-8 yypay:flex yypay:flex-col yypay:items-center yypay:justify-center yypay:gap-3 sm:yypay:flex-row">
               <Button asChild size="lg">
-                <Link href="/login">Se connecter</Link>
+                <a href={YOWAUTH_LOGIN_URL}>Se connecter</a>
               </Button>
             </div>
           </div>
