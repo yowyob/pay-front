@@ -21,19 +21,23 @@ function messageOf(payload: unknown, fallback: string): string {
 
 /**
  * Identité du PAYEUR : c'est le wallet de l'utilisateur connecté qui est débité, jamais celui passé
- * dans l'URL par la plateforme appelante. On s'appuie donc sur la session (actorId, sinon userId).
+ * dans l'URL par la plateforme appelante. Seul l'actorId issu de la session serveur est fiable.
  */
-function resolvePayerOwnerId(request: Request, context: DirectPaymentContext): string {
-  const session = getSessionFromRequest(request);
-  return session.actorId ?? context.params.userId;
+function resolvePayerOwnerId(request: Request): string {
+  const actorId = getSessionFromRequest(request).actorId;
+  if (!actorId) {
+    throw new Error(
+      "Contexte payeur absent : sélectionnez d'abord un contexte utilisateur valide.",
+    );
+  }
+  return actorId;
 }
 
 /** Wallet du payeur, avec son solde. */
 export async function resolvePayerWallet(
   request: Request,
-  context: DirectPaymentContext,
 ): Promise<{ walletId: string; balance: number }> {
-  const ownerId = resolvePayerOwnerId(request, context);
+  const ownerId = resolvePayerOwnerId(request);
   const client = createIwmPaymentClient(request);
   const result = await client.GET("/api/payments/wallets/owner/{ownerId}", {
     params: { path: { ownerId } },
@@ -68,7 +72,7 @@ export async function payArticleFromWallet(
   context: DirectPaymentContext,
   reference: string,
 ): Promise<WalletPaymentDecision> {
-  const { walletId, balance } = await resolvePayerWallet(request, context);
+  const { walletId, balance } = await resolvePayerWallet(request);
   const total = context.totalAmount;
   const currency = context.currency;
 
@@ -105,7 +109,7 @@ export async function rechargeShortfall(
   context: DirectPaymentContext,
   resumeQuery: string,
 ): Promise<{ redirectUrl: string; orderId?: string; amount: number }> {
-  const { walletId, balance } = await resolvePayerWallet(request, context);
+  const { walletId, balance } = await resolvePayerWallet(request);
   const shortfall = Math.max(0, Math.ceil(context.totalAmount - balance));
   if (shortfall <= 0) {
     // Le solde est en réalité suffisant : rien à recharger, on renvoie sur la popup pour payer.
