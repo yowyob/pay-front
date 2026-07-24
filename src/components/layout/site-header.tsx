@@ -1,5 +1,6 @@
 "use client";
 
+import { LanguageToggle } from "@/components/language/language-toggle";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { YOWAUTH_LOGIN_URL } from "@/lib/external-auth";
@@ -27,6 +28,7 @@ export function SiteHeader({ showLogin = true }: SiteHeaderProps) {
         </Link>
 
         <div className="yypay:flex yypay:items-center yypay:gap-2">
+          <LanguageToggle />
           <ThemeToggle />
           {showLogin && (
             <Button asChild size="sm">

@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useLocale } from "@/i18n/locale-provider";
 import { YOWAUTH_LOGIN_URL } from "@/lib/external-auth";
 import {
   Building2,
@@ -19,42 +20,18 @@ import {
   ShoppingCart,
 } from "lucide-react";
 
-const STEPS = [
-  {
-    icon: Lock,
-    title: "Connexion sécurisée",
-    description: "Authentification à deux facteurs pour protéger votre compte.",
-  },
-  {
-    icon: Building2,
-    title: "Choisir votre organisation",
-    description: "Sélectionnez le contexte organisationnel à gérer.",
-  },
-  {
-    icon: CreditCard,
-    title: "Wallet & services",
-    description: "Consultez votre solde, vos transactions et vos abonnements.",
-  },
-  {
-    icon: ShoppingCart,
-    title: "Payer simplement",
-    description: "Paiement sécurisé prélevé sur le solde de votre portefeuille.",
-  },
-];
+// Icônes des étapes (le texte vient du dictionnaire i18n : t.landing.steps).
+const STEP_ICONS = [Lock, Building2, CreditCard, ShoppingCart];
 
-const BENCHMARK_COLUMNS = ["YowYob Payment", "Paiement classique", "Espèces"];
-
-const BENCHMARK_ROWS: {
-  feature: string;
-  values: (boolean | "partial")[];
-}[] = [
-  { feature: "Authentification à deux facteurs", values: [true, "partial", false] },
-  { feature: "Solde centralisé (wallet)", values: [true, false, false] },
-  { feature: "Recharge à la demande", values: [true, "partial", true] },
-  { feature: "Paiement instantané", values: [true, "partial", true] },
-  { feature: "Multi-organisation", values: [true, false, false] },
-  { feature: "Traçabilité des transactions", values: [true, true, false] },
-  { feature: "Intégration en un clic (popup)", values: [true, false, false] },
+// Matrice de comparaison (non traduisible ; les libellés viennent de t.landing.benchmarkFeatures).
+const BENCHMARK_VALUES: (boolean | "partial")[][] = [
+  [true, "partial", false],
+  [true, false, false],
+  [true, "partial", true],
+  [true, "partial", true],
+  [true, false, false],
+  [true, true, false],
+  [true, false, false],
 ];
 
 function BenchmarkCell({ value }: { value: boolean | "partial" }) {
@@ -80,6 +57,9 @@ function BenchmarkCell({ value }: { value: boolean | "partial" }) {
 }
 
 export default function LandingPage() {
+  const { t } = useLocale();
+  const l = t.landing;
+
   return (
     <div className="yypay:flex yypay:min-h-full yypay:flex-col yypay:bg-background">
       <SiteHeader />
@@ -90,15 +70,14 @@ export default function LandingPage() {
         >
           <div className="yypay:mx-auto yypay:max-w-3xl yypay:text-center">
             <h1 className="yypay:text-3xl yypay:font-bold yypay:tracking-tight yypay:text-foreground sm:yypay:text-5xl">
-              Gérez vos paiements et abonnements en toute simplicité
+              {l.heroTitle}
             </h1>
             <p className="yypay:mx-auto yypay:mt-6 yypay:max-w-2xl yypay:text-base yypay:text-muted-foreground sm:yypay:text-lg">
-              Un portefeuille centralisé, des paiements instantanés et une
-              connexion sécurisée pour tous vos services Yowyob.
+              {l.subtitle}
             </p>
             <div className="yypay:mt-8 yypay:flex yypay:flex-col yypay:items-center yypay:justify-center yypay:gap-3 sm:yypay:flex-row">
               <Button asChild size="lg">
-                <a href={YOWAUTH_LOGIN_URL}>Se connecter</a>
+                <a href={YOWAUTH_LOGIN_URL}>{l.login}</a>
               </Button>
             </div>
           </div>
@@ -111,41 +90,42 @@ export default function LandingPage() {
           <div className="yypay:mx-auto yypay:max-w-6xl yypay:px-4 sm:yypay:px-6">
             <div className="yypay:mb-10 yypay:text-center">
               <h2 className="yypay:text-2xl yypay:font-bold yypay:text-foreground sm:yypay:text-3xl">
-                Comment ça marche
+                {l.howItWorksTitle}
               </h2>
               <p className="yypay:mt-2 yypay:text-muted-foreground">
-                Un parcours en 4 étapes, de la connexion au paiement.
+                {l.howItWorksDescription}
               </p>
             </div>
             <div className="yypay:grid yypay:grid-cols-1 yypay:gap-6 sm:yypay:grid-cols-2 lg:yypay:grid-cols-4">
-              {STEPS.map((step) => (
-                <Card
-                  key={step.title}
-                  className="yypay:transition-transform hover:yypay:-translate-y-0.5 hover:yypay:shadow-card-hover"
-                >
-                  <CardHeader>
-                    <step.icon className="yypay:mb-2 yypay:h-8 yypay:w-8 yypay:text-primary" />
-                    <CardTitle className="yypay:text-lg">{step.title}</CardTitle>
-                    <CardDescription>{step.description}</CardDescription>
-                  </CardHeader>
-                </Card>
-              ))}
+              {l.steps.map((step, index) => {
+                const Icon = STEP_ICONS[index] ?? Lock;
+                return (
+                  <Card
+                    key={step.title}
+                    className="yypay:transition-transform hover:yypay:-translate-y-0.5 hover:yypay:shadow-card-hover"
+                  >
+                    <CardHeader>
+                      <Icon className="yypay:mb-2 yypay:h-8 yypay:w-8 yypay:text-primary" />
+                      <CardTitle className="yypay:text-lg">
+                        {step.title}
+                      </CardTitle>
+                      <CardDescription>{step.description}</CardDescription>
+                    </CardHeader>
+                  </Card>
+                );
+              })}
             </div>
           </div>
         </section>
 
-        <section
-          id="benchmark"
-          className="yypay:py-16 sm:yypay:py-20"
-        >
+        <section id="benchmark" className="yypay:py-16 sm:yypay:py-20">
           <div className="yypay:mx-auto yypay:max-w-5xl yypay:px-4 sm:yypay:px-6">
             <div className="yypay:mb-10 yypay:text-center">
               <h2 className="yypay:text-2xl yypay:font-bold yypay:text-foreground sm:yypay:text-3xl">
-                Pourquoi YowYob Payment
+                {l.benchmarkTitle}
               </h2>
               <p className="yypay:mt-2 yypay:text-muted-foreground">
-                Ce que le portefeuille apporte face aux moyens de paiement
-                traditionnels.
+                {l.benchmarkDescription}
               </p>
             </div>
 
@@ -154,9 +134,9 @@ export default function LandingPage() {
                 <thead>
                   <tr>
                     <th className="yypay:bg-card yypay:px-4 yypay:py-4 yypay:text-left yypay:text-sm yypay:font-semibold yypay:text-foreground">
-                      Fonctionnalité
+                      {l.benchmarkFeatureHeader}
                     </th>
-                    {BENCHMARK_COLUMNS.map((col, index) => (
+                    {l.benchmarkColumns.map((col, index) => (
                       <th
                         key={col}
                         className={
@@ -171,14 +151,14 @@ export default function LandingPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {BENCHMARK_ROWS.map((row) => (
-                    <tr key={row.feature}>
+                  {l.benchmarkFeatures.map((feature, rowIndex) => (
+                    <tr key={feature}>
                       <td className="yypay:border-t yypay:border-border yypay:px-4 yypay:py-3 yypay:text-sm yypay:text-foreground">
-                        {row.feature}
+                        {feature}
                       </td>
-                      {row.values.map((value, index) => (
+                      {(BENCHMARK_VALUES[rowIndex] ?? []).map((value, index) => (
                         <td
-                          key={`${row.feature}-${index}`}
+                          key={`${feature}-${index}`}
                           className={
                             index === 0
                               ? "yypay:border-t yypay:border-border yypay:bg-accent/40 yypay:px-4 yypay:py-3 yypay:text-center"

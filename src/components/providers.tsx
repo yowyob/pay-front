@@ -1,6 +1,7 @@
 "use client";
 
 import { ThemeProvider } from "@/components/theme/theme-provider";
+import { LocaleProvider } from "@/i18n/locale-provider";
 import { useTheme } from "next-themes";
 import { useSyncExternalStore } from "react";
 import { Toaster } from "sonner";
@@ -37,9 +38,11 @@ function ThemedToaster() {
 
 export function Providers({ children }: { children?: React.ReactNode }) {
   return (
-    <ThemeProvider>
-      {children}
-      <ThemedToaster />
-    </ThemeProvider>
+    <LocaleProvider>
+      <ThemeProvider>
+        {children}
+        <ThemedToaster />
+      </ThemeProvider>
+    </LocaleProvider>
   );
 }
