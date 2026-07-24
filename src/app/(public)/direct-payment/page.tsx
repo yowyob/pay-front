@@ -11,7 +11,10 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { bffFetch } from "@/lib/bff-client";
-import { DIRECT_WALLET_COMPLETION_STORAGE_KEY } from "@/lib/bundle-constants";
+import {
+  DIRECT_WALLET_COMPLETION_STORAGE_KEY,
+  RECHARGE_ORDER_STORAGE_KEY,
+} from "@/lib/bundle-constants";
 import { CreditCard, Loader2, ShoppingBag, Wallet } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
@@ -113,6 +116,22 @@ function DirectPaymentContent() {
           return;
         }
 
+        // Retour d'une recharge MyCoolPay : on CONFIRME l'ordre de recharge auprès du Kernel
+        // (poll du provider → statut RECHARGED + crédit du wallet). Sans cette étape, la recharge
+        // reste PENDING_PAYMENT côté Kernel et le solde n'est jamais crédité — le solde resterait
+        // insuffisant au moment de payer.
+        const pendingRecharge =
+          typeof window !== "undefined"
+            ? sessionStorage.getItem(RECHARGE_ORDER_STORAGE_KEY)
+            : null;
+        if (pendingRecharge) {
+          sessionStorage.removeItem(RECHARGE_ORDER_STORAGE_KEY);
+          await bffFetch(
+            `/api/payments/wallets/recharge-orders/${pendingRecharge}/refresh`,
+            { method: "POST" },
+          ).catch(() => null);
+        }
+
         const data = await bffFetch<DirectPaymentContextResponse>(
           `/api/direct-payment/context?${queryString}`,
         );
@@ -177,10 +196,17 @@ function DirectPaymentContent() {
     }
     setRecharging(true);
     try {
-      const result = await bffFetch<{ redirectUrl: string; amount: number }>(
-        `/api/direct-payment/wallet-recharge?${queryString}`,
-        { method: "POST" },
-      );
+      const result = await bffFetch<{
+        redirectUrl: string;
+        orderId?: string;
+        amount: number;
+      }>(`/api/direct-payment/wallet-recharge?${queryString}`, {
+        method: "POST",
+      });
+      // On mémorise l'ordre de recharge pour le CONFIRMER au retour (cf. loadContext).
+      if (result.orderId) {
+        sessionStorage.setItem(RECHARGE_ORDER_STORAGE_KEY, result.orderId);
+      }
       window.location.assign(result.redirectUrl);
     } catch (err) {
       toast.error(
