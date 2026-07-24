@@ -64,8 +64,8 @@ function TenantsPageContent() {
   const [selecting, setSelecting] = useState<string | null>(null);
   const [tenants, setTenants] = useState<TenantOption[]>([]);
 
-  async function authenticateAfterTenantSelection() {
-    const loginResult = await performLogin(email, password);
+  async function authenticateAfterTenantSelection(tenantId?: string) {
+    const loginResult = await performLogin(email, password, tenantId);
     if (loginResult.kind === "authenticated") {
       toast.success("Authentification réussie");
       hardNavigate(buildOrganizationsPath(returnTo));
@@ -89,7 +89,7 @@ function TenantsPageContent() {
       if (selectionToken) {
         setSelectionToken(selectionToken);
       }
-      await authenticateAfterTenantSelection();
+      await authenticateAfterTenantSelection(option.tenantId);
     } catch (error) {
       toast.error(
         error instanceof Error

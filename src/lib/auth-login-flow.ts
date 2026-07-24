@@ -14,10 +14,14 @@ export type LoginFlowResult =
 export async function performLogin(
   principal: string,
   password: string,
+  tenantId?: string,
 ): Promise<LoginFlowResult> {
   const result = await bffPostEnvelope<LoginChallengeData>("/api/auth/login", {
     principal,
     password,
+    // Transmis explicitement : dans le flux popup + redirect (MyCoolPay), le cookie de tenant posé
+    // par select-context ne se propage pas toujours au login. On garantit ainsi le tenant sélectionné.
+    ...(tenantId ? { tenantId } : {}),
   });
   const data = result.data;
 
