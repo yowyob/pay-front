@@ -69,21 +69,29 @@ export function WalletCard({ onWalletChange }: WalletCardProps) {
       setUser(me);
       setContext(sessionContext);
       const actorId = sessionContext.actorId ?? me.actorId;
-      if (!actorId) {
+      // On tente d'abord l'actorId (convention), puis l'id du compte : certains wallets ont été
+      // créés avec l'id du compte comme owner et seraient sinon introuvables (« pas de wallet »).
+      const ownerCandidates = Array.from(
+        new Set([actorId, me.id].filter(Boolean) as string[]),
+      );
+      if (ownerCandidates.length === 0) {
         setWallet(null);
         onWalletChange?.(null);
         return;
       }
-      try {
-        const walletData = await bffGet<WalletResponse>(
-          `/api/payments/wallets/owner/${actorId}`,
-        );
-        setWallet(walletData);
-        onWalletChange?.(walletData);
-      } catch {
-        setWallet(null);
-        onWalletChange?.(null);
+      let walletData: WalletResponse | null = null;
+      for (const ownerId of ownerCandidates) {
+        try {
+          walletData = await bffGet<WalletResponse>(
+            `/api/payments/wallets/owner/${ownerId}`,
+          );
+          if (walletData) break;
+        } catch {
+          // Wallet introuvable pour cet owner : on essaie le candidat suivant.
+        }
       }
+      setWallet(walletData);
+      onWalletChange?.(walletData);
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Impossible de charger le wallet",
