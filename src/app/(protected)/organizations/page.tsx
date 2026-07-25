@@ -197,7 +197,12 @@ function OrganizationsPageContent() {
           return;
         }
 
-        toast.error("Aucune organisation disponible pour ce compte");
+        // Aucune organisation = compte à contexte PERSONNEL (wallet perso). L'utilisateur est déjà
+        // authentifié avec son tenant : on ne bloque pas sur « Aucune organisation », on va
+        // directement à la console (wallet, transactions, paiement).
+        clearSensitive();
+        hardNavigate(consolePath(returnTo));
+        return;
       } catch (error) {
         toast.error(
           error instanceof Error
