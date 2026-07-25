@@ -1,20 +1,30 @@
 import {
   getAccessTokenCookieName,
-  getOrganizationIdCookieName,
   getTenantIdCookieName,
 } from "@/lib/session-cookies";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-const PUBLIC_PATHS = ["/", "/login", "/tenants", "/organizations", "/direct-payment"];
+// L'app est servie sous basePath /pay. En middleware, request.nextUrl.pathname est déjà dépouillé
+// du basePath, MAIS NextResponse.redirect(new URL("/x", request.url)) ne le remet PAS → il faut
+// préfixer /pay explicitement, sinon la redirection part sur kernel-core.yowyob.com/x (le Kernel).
+const BASE_PATH = "/pay";
+
+const PUBLIC_PATHS = [
+  "/",
+  "/login",
+  "/tenants",
+  "/organizations",
+  "/direct-payment",
+];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const accessToken = request.cookies.get(getAccessTokenCookieName())?.value;
   const tenantId = request.cookies.get(getTenantIdCookieName())?.value;
-  const organizationId = request.cookies.get(
-    getOrganizationIdCookieName(),
-  )?.value;
+
+  const redirect = (path: string) =>
+    NextResponse.redirect(new URL(`${BASE_PATH}${path}`, request.url));
 
   const isPublic =
     PUBLIC_PATHS.includes(pathname) ||
@@ -23,46 +33,27 @@ export function proxy(request: NextRequest) {
     pathname.startsWith("/_next");
 
   if (isPublic) {
+    // Déjà connecté et sur /login : on saute la page de connexion.
     if (
       accessToken &&
       pathname === "/login" &&
       !request.nextUrl.searchParams.get("step")
     ) {
-      if (organizationId) {
-        return NextResponse.redirect(new URL("/console", request.url));
-      }
-      if (tenantId) {
-        return NextResponse.redirect(new URL("/organizations", request.url));
-      }
-      return NextResponse.redirect(new URL("/tenants", request.url));
+      return tenantId ? redirect("/console") : redirect("/tenants");
     }
     return NextResponse.next();
   }
 
+  // Pages protégées : il faut un token + un tenant. L'ORGANISATION est OPTIONNELLE (les comptes à
+  // wallet personnel n'en ont pas — on ne doit pas les bloquer).
   if (!accessToken) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    return redirect("/login");
   }
-
   if (!tenantId && pathname !== "/tenants") {
-    return NextResponse.redirect(new URL("/tenants", request.url));
+    return redirect("/tenants");
   }
-
   if (tenantId && pathname === "/tenants") {
-    return NextResponse.redirect(
-      new URL(organizationId ? "/console" : "/organizations", request.url),
-    );
-  }
-
-  if (
-    !organizationId &&
-    pathname !== "/organizations" &&
-    pathname !== "/tenants"
-  ) {
-    return NextResponse.redirect(new URL("/organizations", request.url));
-  }
-
-  if (organizationId && pathname === "/organizations") {
-    return NextResponse.redirect(new URL("/console", request.url));
+    return redirect("/console");
   }
 
   return NextResponse.next();
