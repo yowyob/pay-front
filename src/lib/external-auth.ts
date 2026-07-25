@@ -1,6 +1,7 @@
 /**
- * URL de connexion externe (YowAuth). L'authentification n'est plus assurée par le front de
- * paiement : « Se connecter » redirige vers ce portail. Surchargeable par `NEXT_PUBLIC_YOWAUTH_URL`.
+ * URL d'INSCRIPTION externe (YowAuth). La connexion (« Se connecter ») se fait ICI, sur le front de
+ * paiement (page /login). Seule l'inscription (« S'inscrire ») est déléguée à ce portail.
+ * Surchargeable par `NEXT_PUBLIC_YOWAUTH_URL`.
  */
-export const YOWAUTH_LOGIN_URL =
+export const YOWAUTH_SIGNUP_URL =
   process.env.NEXT_PUBLIC_YOWAUTH_URL ?? "https://yowauth.yowyob.com";

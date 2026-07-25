@@ -10,7 +10,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useLocale } from "@/i18n/locale-provider";
-import { YOWAUTH_LOGIN_URL } from "@/lib/external-auth";
+import { YOWAUTH_SIGNUP_URL } from "@/lib/external-auth";
+import Link from "next/link";
 import {
   Building2,
   Check,
@@ -77,7 +78,10 @@ export default function LandingPage() {
             </p>
             <div className="yypay:mt-8 yypay:flex yypay:flex-col yypay:items-center yypay:justify-center yypay:gap-3 sm:yypay:flex-row">
               <Button asChild size="lg">
-                <a href={YOWAUTH_LOGIN_URL}>{l.login}</a>
+                <Link href="/login">{l.login}</Link>
+              </Button>
+              <Button asChild size="lg" variant="outline">
+                <a href={YOWAUTH_SIGNUP_URL}>{l.signUp}</a>
               </Button>
             </div>
           </div>

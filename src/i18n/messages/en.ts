@@ -317,6 +317,7 @@ const en: Messages = {
     heroDescription:
       "YowYob Payment centralizes wallet, transactions and service subscriptions through a secure flow delegated to the Kernel - no password is ever stored on the front end.",
     login: "Sign in",
+    signUp: "Sign up",
     seePricing: "See pricing",
     trust: {
       delegatedAuth: "Sign-in delegated to the IWM Kernel",

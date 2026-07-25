@@ -3,7 +3,7 @@
 import { LanguageToggle } from "@/components/language/language-toggle";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Button } from "@/components/ui/button";
-import { YOWAUTH_LOGIN_URL } from "@/lib/external-auth";
+import { YOWAUTH_SIGNUP_URL } from "@/lib/external-auth";
 import { Wallet } from "lucide-react";
 import Link from "next/link";
 
@@ -31,9 +31,14 @@ export function SiteHeader({ showLogin = true }: SiteHeaderProps) {
           <LanguageToggle />
           <ThemeToggle />
           {showLogin && (
-            <Button asChild size="sm">
-              <a href={YOWAUTH_LOGIN_URL}>Se connecter</a>
-            </Button>
+            <>
+              <Button asChild size="sm" variant="outline">
+                <a href={YOWAUTH_SIGNUP_URL}>S&apos;inscrire</a>
+              </Button>
+              <Button asChild size="sm">
+                <Link href="/login">Se connecter</Link>
+              </Button>
+            </>
           )}
         </div>
       </div>

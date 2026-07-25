@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { YOWAUTH_SIGNUP_URL } from "@/lib/external-auth";
 import {
     organizationsPath as buildOrganizationsPath,
     tenantsPath as buildTenantsPath,
@@ -126,7 +127,14 @@ function LoginPageContent() {
             <Tabs value="login">
               <TabsList className="yypay:grid yypay:w-full yypay:grid-cols-2">
                 <TabsTrigger value="login">Se connecter</TabsTrigger>
-                <TabsTrigger value="signup" disabled>
+                <TabsTrigger
+                  value="signup"
+                  onClick={(e) => {
+                    // L'inscription est assurée par le portail YowAuth (pas ici).
+                    e.preventDefault();
+                    window.location.href = YOWAUTH_SIGNUP_URL;
+                  }}
+                >
                   Créer un compte
                 </TabsTrigger>
               </TabsList>

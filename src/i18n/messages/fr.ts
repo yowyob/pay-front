@@ -315,6 +315,7 @@ const fr = {
     heroDescription:
       "YowYob Payment centralise wallet, transactions et souscription aux services via un parcours sécurisé délégué au Kernel - aucun mot de passe n'est stocké côté front.",
     login: "Se connecter",
+    signUp: "S'inscrire",
     seePricing: "Voir les tarifs",
     trust: {
       delegatedAuth: "Authentification déléguée au Kernel IWM",
