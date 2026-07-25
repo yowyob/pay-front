@@ -16,8 +16,10 @@ import { YOWAUTH_SIGNUP_URL } from "@/lib/external-auth";
 import {
     organizationsPath as buildOrganizationsPath,
     tenantsPath as buildTenantsPath,
+    mfaPath as buildMfaPath,
     hardNavigate,
 } from "@/lib/auth-wizard-navigation";
+import { performLogin } from "@/lib/auth-login-flow";
 import { bffPostEnvelope } from "@/lib/bff-client";
 import { useAuthWizardStore } from "@/stores/auth-wizard-store";
 import type { components } from "@/types/schemas-auth";
@@ -53,6 +55,8 @@ function LoginPageContent() {
     setCredentials,
     setDiscoverData,
     setSelectionToken,
+    setSelectedContext,
+    setMfaToken,
     mfaToken,
     email,
     password,
@@ -88,6 +92,31 @@ function LoginPageContent() {
       setCredentials(principal, secret);
       setSelectionToken(data.selectionToken);
       setDiscoverData(data);
+
+      // Un seul contexte : inutile de passer par la sélection de tenant / select-context. On récupère
+      // le tenant de ce contexte et on se connecte directement (le login accepte X-Tenant-Id).
+      const contexts = data.contexts ?? [];
+      const single = contexts.length === 1 ? contexts[0] : null;
+      if (single?.tenantId) {
+        const loginResult = await performLogin(
+          principal,
+          secret,
+          single.tenantId,
+        );
+        if (single.contextId) {
+          setSelectedContext(single.contextId, single.tenantId);
+        }
+        if (loginResult.kind === "authenticated") {
+          toast.success("Authentification réussie");
+          hardNavigate(organizationsPath());
+          return;
+        }
+        setMfaToken(loginResult.mfaToken);
+        toast.success("Code MFA envoyé par email");
+        hardNavigate(buildMfaPath(returnTo));
+        return;
+      }
+
       toast.success("Identifiants validés — choisissez votre tenant");
       hardNavigate(tenantsPath());
     } catch (error) {
