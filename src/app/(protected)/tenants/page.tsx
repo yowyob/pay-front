@@ -63,6 +63,7 @@ function TenantsPageContent() {
   const [loading, setLoading] = useState(true);
   const [selecting, setSelecting] = useState<string | null>(null);
   const [tenants, setTenants] = useState<TenantOption[]>([]);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   async function authenticateAfterTenantSelection(tenantId?: string) {
     const loginResult = await performLogin(email, password, tenantId);
@@ -79,23 +80,50 @@ function TenantsPageContent() {
 
   async function selectTenant(option: TenantOption, selectionToken?: string) {
     setSelecting(option.tenantId);
+    setErrorMessage(null);
     try {
-      await bffPost("/api/auth/select-context", {
-        selectionToken:
-          selectionToken || useAuthWizardStore.getState().selectionToken,
-        contextId: option.contextId,
-      });
-      setSelectedContext(option.contextId, option.tenantId);
-      if (selectionToken) {
-        setSelectionToken(selectionToken);
+      let token =
+        selectionToken || useAuthWizardStore.getState().selectionToken;
+      let contextId = option.contextId;
+
+      try {
+        await bffPost("/api/auth/select-context", {
+          selectionToken: token,
+          contextId,
+        });
+      } catch {
+        // Le selectionToken a probablement expiré (délai popup / recharge MyCoolPay). On redécouvre
+        // un token frais avec les identifiants en session, puis on réessaie une fois.
+        const fresh = await bffPostEnvelope<DiscoverLoginContextsResponse>(
+          "/api/auth/discover-contexts",
+          { principal: email, password },
+        );
+        const data = fresh.data;
+        const match =
+          data?.contexts?.find((c) => c.tenantId === option.tenantId) ??
+          data?.contexts?.[0];
+        if (!data?.selectionToken || !match?.contextId) {
+          throw new Error("Session expirée. Reconnectez-vous.");
+        }
+        token = data.selectionToken;
+        contextId = match.contextId;
+        setDiscoverData(data);
+        await bffPost("/api/auth/select-context", {
+          selectionToken: token,
+          contextId,
+        });
       }
+
+      setSelectedContext(contextId, option.tenantId);
+      setSelectionToken(token);
       await authenticateAfterTenantSelection(option.tenantId);
     } catch (error) {
-      toast.error(
+      const msg =
         error instanceof Error
           ? error.message
-          : "Impossible de sélectionner ce tenant",
-      );
+          : "Impossible de sélectionner ce tenant";
+      setErrorMessage(msg);
+      toast.error(msg);
       setSelecting(null);
     }
   }
@@ -125,7 +153,9 @@ function TenantsPageContent() {
 
         const options = mapDiscoverToTenantOptions(resolvedData);
         if (options.length === 0) {
-          toast.error("Aucun tenant disponible pour ce compte");
+          const msg = "Aucun tenant disponible pour ce compte";
+          setErrorMessage(msg);
+          toast.error(msg);
           return;
         }
 
@@ -184,11 +214,21 @@ function TenantsPageContent() {
         {!loading && tenants.length === 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Aucun tenant</CardTitle>
+              <CardTitle>
+                {errorMessage ? "Connexion impossible" : "Aucun tenant"}
+              </CardTitle>
               <CardDescription>
-                Aucun tenant n&apos;est disponible pour ce compte.
+                {errorMessage ??
+                  "Aucun tenant n'est disponible pour ce compte."}
               </CardDescription>
             </CardHeader>
+            {errorMessage && (
+              <CardContent>
+                <Button onClick={() => router.replace("/login")}>
+                  Réessayer la connexion
+                </Button>
+              </CardContent>
+            )}
           </Card>
         )}
 
