@@ -138,8 +138,7 @@ export function ActivityFlowChart({ items, currency }: ActivityFlowChartProps) {
       <div className="yypay:relative">
         <svg
           viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
-          className="yypay:h-56 yypay:w-full"
-          preserveAspectRatio="none"
+          className="yypay:h-auto yypay:w-full"
           role="img"
           aria-label="Courbe des entrées et sorties dans le temps"
         >
