@@ -66,6 +66,69 @@ export function getActivityStatusVariant(
   return "secondary";
 }
 
+export type ActivityDirection = "in" | "out" | "neutral";
+
+export type ActivityStatusGroup = "success" | "pending" | "failed";
+
+// Sens du mouvement d'argent. Le back n'expose pas de champ « direction » : on le dérive de la
+// source (une recharge crédite le wallet = entrée ; paiements/plans/bundles = sorties) et, pour les
+// transactions wallet natives, du type (CREDIT/RECHARGE = entrée, DEBIT/PAYMENT = sortie).
+const WALLET_IN_TYPES = new Set([
+  "CREDIT",
+  "RECHARGE",
+  "RECHARGE_WALLET",
+  "DEPOSIT",
+  "TOPUP",
+  "TOP_UP",
+  "REFUND",
+  "REVERSAL",
+  "RECEIVE",
+  "IN",
+]);
+
+const WALLET_OUT_TYPES = new Set([
+  "DEBIT",
+  "PAYMENT",
+  "WITHDRAW",
+  "WITHDRAWAL",
+  "PURCHASE",
+  "TRANSFER",
+  "TRANSFER_OUT",
+  "OUT",
+]);
+
+export function getActivityDirection(item: PaymentActivityItem): ActivityDirection {
+  switch (item.source) {
+    case "recharge_order":
+      return "in";
+    case "payment_order":
+    case "plan_order":
+    case "bundle_order":
+      return "out";
+    case "wallet": {
+      const normalized = item.type?.trim().toUpperCase() ?? "";
+      if (WALLET_IN_TYPES.has(normalized)) return "in";
+      if (WALLET_OUT_TYPES.has(normalized)) return "out";
+      return "neutral";
+    }
+    default:
+      return "neutral";
+  }
+}
+
+export function getActivityStatusGroup(status?: string): ActivityStatusGroup {
+  const normalized = status?.trim().toUpperCase() ?? "";
+  if (FAILED_STATUSES.has(normalized)) return "failed";
+  if (PENDING_STATUSES.has(normalized)) return "pending";
+  return "success";
+}
+
+// Ne compte dans les totaux entrées/sorties que les opérations réussies (une recharge en attente ou
+// échouée n'a pas crédité le solde).
+export function isSettledActivity(item: PaymentActivityItem): boolean {
+  return getActivityStatusGroup(item.status) === "success";
+}
+
 export function formatActivityType(item: PaymentActivityItem): string {
   switch (item.source) {
     case "wallet":

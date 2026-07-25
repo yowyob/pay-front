@@ -4,7 +4,14 @@ import { PlansGrid } from "@/components/console/plans-grid";
 import { TransactionList } from "@/components/console/transaction-list";
 import { WalletCard } from "@/components/console/wallet-card";
 import { ConsoleHeader } from "@/components/layout/console-header";
-import { bffPost } from "@/lib/bff-client";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { bffGet, bffPost } from "@/lib/bff-client";
 import {
   BUNDLE_ORDER_STORAGE_KEY,
   COMMERCIAL_PLAN_ORDER_STORAGE_KEY,
@@ -39,9 +46,27 @@ export default function ConsolePageClient() {
   const paymentReturn = parsePaymentReturn(searchParams.get("payment"));
   const [wallet, setWallet] = useState<WalletResponse | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  // null = inconnu tant que le contexte n'a pas répondu ; les plans commerciaux sont rattachés à une
+  // organisation, donc on ne les propose pas (et on n'affiche plus « Organisation non sélectionnée »)
+  // aux comptes à wallet personnel.
+  const [hasOrganization, setHasOrganization] = useState<boolean | null>(null);
 
   const handleRefresh = useCallback(() => {
     setRefreshKey((key) => key + 1);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    void bffGet<{ organizationId?: string | null }>("/api/session/context")
+      .then((context) => {
+        if (!cancelled) setHasOrganization(Boolean(context.organizationId));
+      })
+      .catch(() => {
+        if (!cancelled) setHasOrganization(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -246,12 +271,35 @@ export default function ConsolePageClient() {
           </div>
         </div>
 
-        <section className="yypay:mt-10">
-          <h2 className="yypay:mb-4 yypay:text-xl yypay:font-semibold yypay:text-foreground">
-            Plans disponibles
-          </h2>
-          <PlansGrid key={`plans-${dataKey}`} refreshKey={refreshKey} />
-        </section>
+        {hasOrganization !== false && (
+          <section className="yypay:mt-10">
+            <h2 className="yypay:mb-4 yypay:text-xl yypay:font-semibold yypay:text-foreground">
+              Plans disponibles
+            </h2>
+            <PlansGrid key={`plans-${dataKey}`} refreshKey={refreshKey} />
+          </section>
+        )}
+
+        {hasOrganization === false && (
+          <section className="yypay:mt-10">
+            <Card>
+              <CardHeader>
+                <CardTitle>Plans commerciaux</CardTitle>
+                <CardDescription>
+                  Réservés aux organisations
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="yypay:text-sm yypay:text-secondary">
+                  Votre compte utilise un wallet personnel : vous pouvez recharger
+                  votre solde et payer, mais les plans commerciaux sont rattachés à
+                  une organisation. Rejoignez ou créez une organisation pour y
+                  souscrire.
+                </p>
+              </CardContent>
+            </Card>
+          </section>
+        )}
       </main>
     </div>
   );
