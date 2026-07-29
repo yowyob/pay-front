@@ -317,29 +317,12 @@ const en: Messages = {
     heroDescription:
       "YowYob Payment centralizes wallet, transactions and service subscriptions through a secure flow delegated to the Kernel - no password is ever stored on the front end.",
     login: "Sign in",
-    signUp: "Sign up",
     seePricing: "See pricing",
     trust: {
       delegatedAuth: "Sign-in delegated to the IWM Kernel",
       noPasswordStored: "No password ever stored on the front end",
       securePayments: "Secure payments via MYCOOLPAY",
     },
-    subtitle:
-      "A centralized wallet, instant payments and secure sign-in for all your Yowyob services.",
-    benchmarkTitle: "Why YowYob Payment",
-    benchmarkDescription:
-      "What the wallet brings compared to traditional payment methods.",
-    benchmarkFeatureHeader: "Feature",
-    benchmarkColumns: ["YowYob Payment", "Traditional payment", "Cash"],
-    benchmarkFeatures: [
-      "Two-factor authentication",
-      "Centralized balance (wallet)",
-      "On-demand top-up",
-      "Instant payment",
-      "Multi-organization",
-      "Transaction traceability",
-      "One-click integration (popup)",
-    ],
     howItWorksTitle: "How it works",
     howItWorksDescription: "A 4-step journey, from sign-in to payment.",
     steps: [
@@ -396,8 +379,8 @@ const en: Messages = {
     welcomeBackDescription: "Sign in to access your console.",
     mfaTitle: "MFA verification",
     mfaDescription: "Enter the code you received by email.",
-    emailLabel: "Email",
-    emailPlaceholder: "e.g. you@domain.com",
+    emailLabel: "Username / Identifier",
+    emailPlaceholder: "Your login identifier",
     passwordLabel: "Password",
     passwordPlaceholder: "Enter your password",
     showPassword: "Show password",

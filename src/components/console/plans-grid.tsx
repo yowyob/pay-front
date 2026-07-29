@@ -3,6 +3,8 @@
 import { PlansPricingSection } from "@/components/plans/plans-pricing-section";
 import { useCommercialPlanQuotes } from "@/hooks/use-commercial-plan-quotes";
 import { usePlanAutoRenewals } from "@/hooks/use-plan-auto-renewals";
+import { toIntlTag } from "@/i18n/format";
+import { useLocale } from "@/i18n/locale-provider";
 import { bffGet } from "@/lib/bff-client";
 import { getPlanLabel } from "@/lib/commercial-plan-display";
 import {
@@ -26,6 +28,8 @@ type PlansGridProps = {
 };
 
 export function PlansGrid({ refreshKey = 0 }: PlansGridProps) {
+  const { t, locale } = useLocale();
+  const intlTag = toIntlTag(locale);
   const [plans, setPlans] = useState<CommercialPlanResponse[]>([]);
   const [subscriptions, setSubscriptions] = useState<SubscriptionResponse[]>([]);
   const [pendingPlanCodes, setPendingPlanCodes] = useState<Set<string>>(
@@ -67,12 +71,11 @@ export function PlansGrid({ refreshKey = 0 }: PlansGridProps) {
       );
       await reloadAutoRenewals();
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Impossible de charger les plans",
-      );
+      toast.error(error instanceof Error ? error.message : t.plans.loadError);
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reloadAutoRenewals]);
 
   useEffect(() => {
@@ -89,17 +92,15 @@ export function PlansGrid({ refreshKey = 0 }: PlansGridProps) {
     };
   }, [loadData, refreshKey]);
 
-  const purchaseGuard = canPurchasePlan(subscriptions, plans);
+  const purchaseGuard = canPurchasePlan(subscriptions, plans, t, intlTag);
 
   async function handleEnableAutoRenewal(planCode: string) {
     try {
       await enableAutoRenewal(planCode, { billingPeriod });
-      toast.success("Renouvellement automatique activé");
+      toast.success(t.plans.autoRenewalEnabled);
     } catch (error) {
       toast.error(
-        error instanceof Error
-          ? error.message
-          : "Impossible d'activer le renouvellement automatique",
+        error instanceof Error ? error.message : t.plans.autoRenewalEnableError,
       );
     }
   }
@@ -107,12 +108,10 @@ export function PlansGrid({ refreshKey = 0 }: PlansGridProps) {
   async function handleDisableAutoRenewal(planCode: string) {
     try {
       await disableAutoRenewal(planCode);
-      toast.success("Renouvellement automatique désactivé");
+      toast.success(t.plans.autoRenewalDisabled);
     } catch (error) {
       toast.error(
-        error instanceof Error
-          ? error.message
-          : "Impossible de désactiver le renouvellement automatique",
+        error instanceof Error ? error.message : t.plans.autoRenewalDisableError,
       );
     }
   }
@@ -132,28 +131,28 @@ export function PlansGrid({ refreshKey = 0 }: PlansGridProps) {
       autoRenewalsLoading={autoRenewalsLoading}
       autoRenewalMutatingPlanCode={mutatingPlanCode}
       hasPlanInCart={(planCode) => hasPlan(planCode)}
-      getCtaLabel={() => "Ajouter au panier"}
+      getCtaLabel={() => t.cart.addToCart}
       onEnableAutoRenewal={handleEnableAutoRenewal}
       onDisableAutoRenewal={handleDisableAutoRenewal}
       onSelectPlan={(plan) => {
         const planCode = plan.code;
         if (!planCode) {
-          toast.error("Plan invalide");
+          toast.error(t.plans.invalidPlan);
           return;
         }
 
         if (!purchaseGuard.allowed) {
-          toast.error(purchaseGuard.reason ?? "Achat de plan indisponible");
+          toast.error(purchaseGuard.reason ?? t.plans.purchaseUnavailable);
           return;
         }
 
         if (pendingPlanCodes.has(planCode)) {
-          toast.error(buildPendingPaymentMessage(planCode));
+          toast.error(buildPendingPaymentMessage(planCode, t));
           return;
         }
 
         if (!quotes[planCode]?.total) {
-          toast.error("Devis indisponible pour ce plan. Réessayez dans un instant.");
+          toast.error(t.plans.quoteUnavailable);
           return;
         }
 
@@ -162,7 +161,7 @@ export function PlansGrid({ refreshKey = 0 }: PlansGridProps) {
         }
 
         addPlan(plan);
-        toast.success(`${getPlanLabel(plan)} ajouté au panier`);
+        toast.success(t.plans.addedToCart(getPlanLabel(plan, t)));
       }}
     />
   );

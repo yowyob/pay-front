@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useLocale } from "@/i18n/locale-provider";
 import { cn } from "@/lib/utils";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
@@ -24,6 +25,7 @@ function getServerSnapshot() {
 
 export function ThemeToggle({ className }: ThemeToggleProps) {
   const { resolvedTheme, setTheme } = useTheme();
+  const { t } = useLocale();
   const mounted = useSyncExternalStore(
     subscribe,
     getClientSnapshot,
@@ -36,7 +38,7 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
         variant="ghost"
         size="icon"
         className={cn("yypay:shrink-0", className)}
-        aria-label="Changer le thème"
+        aria-label={t.theme.toggle}
         disabled
       >
         <Sun className="yypay:h-4 yypay:w-4" />
@@ -52,7 +54,7 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
       variant="ghost"
       size="icon"
       className={cn("yypay:shrink-0", className)}
-      aria-label={isDark ? "Activer le mode clair" : "Activer le mode sombre"}
+      aria-label={isDark ? t.theme.toggleToLight : t.theme.toggleToDark}
       onClick={() => setTheme(isDark ? "light" : "dark")}
     >
       {isDark ? (

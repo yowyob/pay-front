@@ -1,7 +1,8 @@
 "use client";
 
-import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { PlansPricingSection } from "@/components/plans/plans-pricing-section";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,57 +10,55 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useCommercialPlanQuotes } from "@/hooks/use-commercial-plan-quotes";
 import { useLocale } from "@/i18n/locale-provider";
-import { YOWAUTH_SIGNUP_URL } from "@/lib/external-auth";
-import Link from "next/link";
+import { bffGet } from "@/lib/bff-client";
+import type { BillingPeriod } from "@/lib/commercial-plan-display";
+import type { components } from "@/types/schemas-payment";
 import {
   Building2,
-  Check,
   CreditCard,
+  KeyRound,
   Lock,
-  Minus,
+  Search,
+  ShieldCheck,
   ShoppingCart,
+  Tag,
+  Wallet,
+  type LucideIcon,
 } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 
-// Icônes des étapes (le texte vient du dictionnaire i18n : t.landing.steps).
-const STEP_ICONS = [Lock, Building2, CreditCard, ShoppingCart];
+type CommercialPlanResponse = components["schemas"]["CommercialPlanResponse"];
 
-// Matrice de comparaison (non traduisible ; les libellés viennent de t.landing.benchmarkFeatures).
-const BENCHMARK_VALUES: (boolean | "partial")[][] = [
-  [true, "partial", false],
-  [true, false, false],
-  [true, "partial", true],
-  [true, "partial", true],
-  [true, false, false],
-  [true, true, false],
-  [true, false, false],
-];
-
-function BenchmarkCell({ value }: { value: boolean | "partial" }) {
-  if (value === true) {
-    return (
-      <span className="yypay:inline-flex yypay:h-6 yypay:w-6 yypay:items-center yypay:justify-center yypay:rounded-full yypay:bg-success/15 yypay:text-success">
-        <Check className="yypay:h-4 yypay:w-4" />
-      </span>
-    );
-  }
-  if (value === "partial") {
-    return (
-      <span className="yypay:inline-flex yypay:h-6 yypay:w-6 yypay:items-center yypay:justify-center yypay:rounded-full yypay:bg-muted yypay:text-muted-foreground">
-        <Minus className="yypay:h-4 yypay:w-4" />
-      </span>
-    );
-  }
-  return (
-    <span className="yypay:text-lg yypay:font-medium yypay:text-muted-foreground/50">
-      —
-    </span>
-  );
-}
+const STEP_ICONS: LucideIcon[] = [Lock, Building2, CreditCard, ShoppingCart];
+const FEATURE_ICONS: LucideIcon[] = [Wallet, Search, Tag, ShieldCheck];
+const TRUST_ICONS: LucideIcon[] = [KeyRound, Lock, ShieldCheck];
 
 export default function LandingPage() {
   const { t } = useLocale();
-  const l = t.landing;
+  const steps = t.landing.steps;
+  const features = t.landing.features;
+  const trustItems = [
+    t.landing.trust.delegatedAuth,
+    t.landing.trust.noPasswordStored,
+    t.landing.trust.securePayments,
+  ];
+  const [plans, setPlans] = useState<CommercialPlanResponse[]>([]);
+  const [loadingPlans, setLoadingPlans] = useState(true);
+  const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>("MONTHLY");
+  const { quotes, loading: quotesLoading } = useCommercialPlanQuotes(
+    plans,
+    billingPeriod,
+  );
+
+  useEffect(() => {
+    bffGet<CommercialPlanResponse[]>("/api/plans")
+      .then((data) => setPlans(Array.isArray(data) ? data : []))
+      .catch(() => setPlans([]))
+      .finally(() => setLoadingPlans(false));
+  }, []);
 
   return (
     <div className="yypay:flex yypay:min-h-full yypay:flex-col yypay:bg-background">
@@ -67,23 +66,40 @@ export default function LandingPage() {
       <main className="yypay:flex-1">
         <section
           id="accueil"
-          className="yypay:mx-auto yypay:max-w-6xl yypay:px-4 yypay:py-16 sm:yypay:px-6 sm:yypay:py-24"
+          className="yypay:relative yypay:overflow-hidden yypay:px-4 yypay:py-16 sm:yypay:px-6 sm:yypay:py-24"
         >
-          <div className="yypay:mx-auto yypay:max-w-3xl yypay:text-center">
+          <div
+            aria-hidden
+            className="yypay:pointer-events-none yypay:absolute yypay:left-1/2 yypay:top-0 yypay:h-[32rem] yypay:w-[32rem] yypay:-translate-x-1/2 yypay:-translate-y-1/3 yypay:rounded-full yypay:bg-primary/10 yypay:blur-3xl"
+          />
+          <div className="yypay:relative yypay:mx-auto yypay:max-w-3xl yypay:text-center">
+            <Badge className="yypay:mb-4">{t.landing.badge}</Badge>
             <h1 className="yypay:text-3xl yypay:font-bold yypay:tracking-tight yypay:text-foreground sm:yypay:text-5xl">
-              {l.heroTitle}
+              {t.landing.heroTitle}
             </h1>
-            <p className="yypay:mx-auto yypay:mt-6 yypay:max-w-2xl yypay:text-base yypay:text-muted-foreground sm:yypay:text-lg">
-              {l.subtitle}
+            <p className="yypay:mt-4 yypay:text-base yypay:text-muted-foreground sm:yypay:text-lg">
+              {t.landing.heroDescription}
             </p>
             <div className="yypay:mt-8 yypay:flex yypay:flex-col yypay:items-center yypay:justify-center yypay:gap-3 sm:yypay:flex-row">
               <Button asChild size="lg">
-                <Link href="/login">{l.login}</Link>
+                <Link href="/login">{t.landing.login}</Link>
               </Button>
-              <Button asChild size="lg" variant="outline">
-                <a href={YOWAUTH_SIGNUP_URL}>{l.signUp}</a>
+              <Button asChild variant="outline" size="lg">
+                <a href="#tarifs">{t.landing.seePricing}</a>
               </Button>
             </div>
+
+            <ul className="yypay:mt-10 yypay:flex yypay:flex-col yypay:items-center yypay:justify-center yypay:gap-3 yypay:text-sm yypay:text-muted-foreground sm:yypay:flex-row sm:yypay:gap-6">
+              {trustItems.map((item, index) => {
+                const Icon = TRUST_ICONS[index];
+                return (
+                  <li key={item} className="yypay:flex yypay:items-center yypay:gap-2">
+                    <Icon className="yypay:h-4 yypay:w-4 yypay:text-primary" />
+                    {item}
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         </section>
 
@@ -94,25 +110,30 @@ export default function LandingPage() {
           <div className="yypay:mx-auto yypay:max-w-6xl yypay:px-4 sm:yypay:px-6">
             <div className="yypay:mb-10 yypay:text-center">
               <h2 className="yypay:text-2xl yypay:font-bold yypay:text-foreground sm:yypay:text-3xl">
-                {l.howItWorksTitle}
+                {t.landing.howItWorksTitle}
               </h2>
               <p className="yypay:mt-2 yypay:text-muted-foreground">
-                {l.howItWorksDescription}
+                {t.landing.howItWorksDescription}
               </p>
             </div>
             <div className="yypay:grid yypay:grid-cols-1 yypay:gap-6 sm:yypay:grid-cols-2 lg:yypay:grid-cols-4">
-              {l.steps.map((step, index) => {
-                const Icon = STEP_ICONS[index] ?? Lock;
+              {steps.map((step, index) => {
+                const Icon = STEP_ICONS[index];
                 return (
                   <Card
                     key={step.title}
-                    className="yypay:transition-transform hover:yypay:-translate-y-0.5 hover:yypay:shadow-card-hover"
+                    className="yypay:relative yypay:transition-transform hover:yypay:-translate-y-0.5 hover:yypay:shadow-card-hover"
                   >
                     <CardHeader>
-                      <Icon className="yypay:mb-2 yypay:h-8 yypay:w-8 yypay:text-primary" />
-                      <CardTitle className="yypay:text-lg">
-                        {step.title}
-                      </CardTitle>
+                      <div className="yypay:flex yypay:items-center yypay:justify-between">
+                        <span className="yypay:flex yypay:h-10 yypay:w-10 yypay:items-center yypay:justify-center yypay:rounded-lg yypay:bg-primary/10 yypay:text-primary">
+                          <Icon className="yypay:h-5 yypay:w-5" />
+                        </span>
+                        <span className="yypay:text-sm yypay:font-semibold yypay:text-muted-foreground/60">
+                          {String(index + 1).padStart(2, "0")}
+                        </span>
+                      </div>
+                      <CardTitle className="yypay:mt-2 yypay:text-lg">{step.title}</CardTitle>
                       <CardDescription>{step.description}</CardDescription>
                     </CardHeader>
                   </Card>
@@ -122,67 +143,84 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section id="benchmark" className="yypay:py-16 sm:yypay:py-20">
-          <div className="yypay:mx-auto yypay:max-w-5xl yypay:px-4 sm:yypay:px-6">
-            <div className="yypay:mb-10 yypay:text-center">
-              <h2 className="yypay:text-2xl yypay:font-bold yypay:text-foreground sm:yypay:text-3xl">
-                {l.benchmarkTitle}
-              </h2>
-              <p className="yypay:mt-2 yypay:text-muted-foreground">
-                {l.benchmarkDescription}
-              </p>
-            </div>
+        <section
+          id="documentation"
+          className="yypay:mx-auto yypay:max-w-6xl yypay:px-4 yypay:py-16 sm:yypay:px-6"
+        >
+          <div className="yypay:mb-10 yypay:text-center">
+            <h2 className="yypay:text-2xl yypay:font-bold yypay:text-foreground sm:yypay:text-3xl">
+              {t.landing.featuresTitle}
+            </h2>
+            <p className="yypay:mt-2 yypay:text-muted-foreground">
+              {t.landing.featuresDescription}
+            </p>
+          </div>
+          <div className="yypay:grid yypay:grid-cols-1 yypay:gap-6 sm:yypay:grid-cols-2">
+            {features.map((feature, index) => {
+              const Icon = FEATURE_ICONS[index];
+              return (
+                <Card
+                  key={feature.title}
+                  className="yypay:transition-transform hover:yypay:-translate-y-0.5 hover:yypay:shadow-card-hover"
+                >
+                  <CardHeader className="yypay:flex-row yypay:items-start yypay:gap-4 yypay:space-y-0">
+                    <span className="yypay:flex yypay:h-11 yypay:w-11 yypay:shrink-0 yypay:items-center yypay:justify-center yypay:rounded-xl yypay:bg-primary yypay:text-primary-foreground">
+                      <Icon className="yypay:h-5 yypay:w-5" />
+                    </span>
+                    <div>
+                      <CardTitle className="yypay:text-lg">{feature.title}</CardTitle>
+                      <CardDescription className="yypay:mt-1.5">
+                        {feature.description}
+                      </CardDescription>
+                    </div>
+                  </CardHeader>
+                </Card>
+              );
+            })}
+          </div>
+        </section>
 
-            <div className="yypay:overflow-x-auto">
-              <table className="yypay:w-full yypay:min-w-[560px] yypay:border-separate yypay:border-spacing-0 yypay:overflow-hidden yypay:rounded-xl yypay:border yypay:border-border">
-                <thead>
-                  <tr>
-                    <th className="yypay:bg-card yypay:px-4 yypay:py-4 yypay:text-left yypay:text-sm yypay:font-semibold yypay:text-foreground">
-                      {l.benchmarkFeatureHeader}
-                    </th>
-                    {l.benchmarkColumns.map((col, index) => (
-                      <th
-                        key={col}
-                        className={
-                          index === 0
-                            ? "yypay:bg-accent yypay:px-4 yypay:py-4 yypay:text-center yypay:text-sm yypay:font-semibold yypay:text-accent-foreground"
-                            : "yypay:bg-card yypay:px-4 yypay:py-4 yypay:text-center yypay:text-sm yypay:font-semibold yypay:text-muted-foreground"
-                        }
-                      >
-                        {col}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {l.benchmarkFeatures.map((feature, rowIndex) => (
-                    <tr key={feature}>
-                      <td className="yypay:border-t yypay:border-border yypay:px-4 yypay:py-3 yypay:text-sm yypay:text-foreground">
-                        {feature}
-                      </td>
-                      {(BENCHMARK_VALUES[rowIndex] ?? []).map((value, index) => (
-                        <td
-                          key={`${feature}-${index}`}
-                          className={
-                            index === 0
-                              ? "yypay:border-t yypay:border-border yypay:bg-accent/40 yypay:px-4 yypay:py-3 yypay:text-center"
-                              : "yypay:border-t yypay:border-border yypay:px-4 yypay:py-3 yypay:text-center"
-                          }
-                        >
-                          <span className="yypay:inline-flex yypay:items-center yypay:justify-center">
-                            <BenchmarkCell value={value} />
-                          </span>
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+        <section
+          id="tarifs"
+          className="yypay:border-t yypay:border-border yypay:bg-muted/30 yypay:py-16 sm:yypay:py-20"
+        >
+          <div className="yypay:mx-auto yypay:max-w-7xl yypay:px-4 sm:yypay:px-6">
+            <PlansPricingSection
+              plans={plans}
+              loading={loadingPlans}
+              quotes={quotes}
+              quotesLoading={quotesLoading}
+              billingPeriod={billingPeriod}
+              onBillingPeriodChange={setBillingPeriod}
+              getCtaLabel={() => t.landing.getStarted}
+              onSelectPlan={() => {
+                globalThis.location.assign("/login");
+              }}
+            />
           </div>
         </section>
       </main>
-      <SiteFooter />
+
+      <footer className="yypay:border-t yypay:border-border yypay:bg-card">
+        <div className="yypay:mx-auto yypay:flex yypay:max-w-6xl yypay:flex-col yypay:items-center yypay:justify-between yypay:gap-4 yypay:px-4 yypay:py-8 sm:yypay:flex-row sm:yypay:px-6">
+          <div className="yypay:flex yypay:items-center yypay:gap-2">
+            <span className="yypay:flex yypay:h-8 yypay:w-8 yypay:items-center yypay:justify-center yypay:rounded-lg yypay:bg-primary yypay:text-primary-foreground">
+              <Wallet className="yypay:h-4 yypay:w-4" />
+            </span>
+            <div>
+              <p className="yypay:text-sm yypay:font-semibold yypay:text-foreground">
+                YowYob Payment
+              </p>
+              <p className="yypay:text-xs yypay:text-muted-foreground">
+                {t.landing.footerTagline}
+              </p>
+            </div>
+          </div>
+          <p className="yypay:text-xs yypay:text-muted-foreground">
+            {t.landing.footerRights(new Date().getFullYear())}
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }

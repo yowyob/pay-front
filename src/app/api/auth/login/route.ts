@@ -15,17 +15,10 @@ type ApiResponseLoginResponse =
   components["schemas"]["ApiResponseLoginResponse"];
 
 export async function POST(request: Request) {
-  const body =
-    (await readJsonBody<LoginRequest & { tenantId?: string }>(request)) ??
-    ({} as LoginRequest & { tenantId?: string });
+  const body = await readJsonBody<LoginRequest>(request);
   const session = getSessionFromRequest(request);
 
-  // Le tenant peut venir du cookie (select-context) OU du corps (fallback popup/redirect, où le
-  // cookie ne se propage pas toujours). On le transmet ensuite explicitement au Kernel.
-  const { tenantId: bodyTenantId, ...loginBody } = body;
-  const tenantId = session.tenantId ?? bodyTenantId;
-
-  if (!tenantId) {
+  if (!session.tenantId) {
     return NextResponse.json(
       {
         success: false,
@@ -39,8 +32,7 @@ export async function POST(request: Request) {
 
   const client = createIwmAuthClient(request);
   const result = await client.POST("/api/auth/login", {
-    body: asJsonBody(loginBody),
-    headers: { "X-Tenant-Id": tenantId },
+    body: asJsonBody(body),
   });
 
   const payload = (result.data ?? result.error) as

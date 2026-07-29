@@ -8,11 +8,9 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
+import { useLocale } from "@/i18n/locale-provider";
 import { bffFetch } from "@/lib/bff-client";
-import {
-    DIRECT_PAYMENT_SESSION_STORAGE_KEY,
-    DIRECT_WALLET_COMPLETION_STORAGE_KEY,
-} from "@/lib/bundle-constants";
+import { DIRECT_PAYMENT_SESSION_STORAGE_KEY } from "@/lib/bundle-constants";
 import type { DirectPaymentSession } from "@/lib/direct-payment";
 import { parsePaymentReturn } from "@/lib/payment-callback";
 import { CheckCircle2, Loader2, XCircle } from "lucide-react";
@@ -29,45 +27,6 @@ type FinalizeResponse = {
 
 const CLOSE_DELAY_MS = 5000;
 
-/**
- * Notifie la plateforme APPELANTE du résultat, via `postMessage` vers la fenêtre ouvrante.
- *
- * On restreint la cible à l'origine de `returnUrl` quand elle est connue : sans ça, le message
- * partirait vers `*` et n'importe quelle page pourrait le lire. C'est ce message qui permet à la
- * plateforme d'afficher ce qu'elle veut une fois la fenêtre fermée.
- */
-function notifyOpener(payload: {
-  success: boolean;
-  orderId?: string;
-  paymentOrderId?: string;
-  reference?: string;
-  paymentStatus?: string;
-  returnUrl?: string;
-}) {
-  if (typeof window === "undefined" || !window.opener) {
-    return;
-  }
-  let targetOrigin = "*";
-  if (payload.returnUrl) {
-    try {
-      targetOrigin = new URL(payload.returnUrl).origin;
-    } catch {
-      targetOrigin = "*";
-    }
-  }
-  window.opener.postMessage(
-    {
-      type: "yypay:payment:complete",
-      status: payload.success ? "success" : "failure",
-      orderId: payload.orderId,
-      paymentOrderId: payload.paymentOrderId,
-      reference: payload.reference,
-      paymentStatus: payload.paymentStatus,
-    },
-    targetOrigin,
-  );
-}
-
 export default function DirectPaymentReturnPage() {
   return (
     <Suspense
@@ -83,6 +42,7 @@ export default function DirectPaymentReturnPage() {
 }
 
 function DirectPaymentReturnContent() {
+  const { t } = useLocale();
   const searchParams = useSearchParams();
   const paymentReturn = useMemo(
     () => parsePaymentReturn(searchParams.get("payment")),
@@ -96,42 +56,9 @@ function DirectPaymentReturnContent() {
 
   useEffect(() => {
     async function finalizePayment() {
-      // Cas portefeuille : le paiement est DÉJÀ réglé (débit synchrone du wallet). Il n'y a rien à
-      // finaliser côté provider — on confirme, on notifie la plateforme appelante, puis on ferme.
-      const walletRaw = sessionStorage.getItem(
-        DIRECT_WALLET_COMPLETION_STORAGE_KEY,
-      );
-      if (walletRaw) {
-        try {
-          const completion = JSON.parse(walletRaw) as {
-            success: boolean;
-            reference?: string;
-            amount?: number;
-            currency?: string;
-            returnUrl?: string;
-          };
-          sessionStorage.removeItem(DIRECT_WALLET_COMPLETION_STORAGE_KEY);
-          setResult({
-            status: completion.success ? "PAID" : "FAILED",
-            success: completion.success,
-          });
-          notifyOpener({
-            success: completion.success,
-            reference: completion.reference,
-            paymentStatus: completion.success ? "PAID" : "FAILED",
-            returnUrl: completion.returnUrl,
-          });
-        } catch {
-          setError("Résultat de paiement illisible");
-        } finally {
-          setLoading(false);
-        }
-        return;
-      }
-
       const raw = sessionStorage.getItem(DIRECT_PAYMENT_SESSION_STORAGE_KEY);
       if (!raw) {
-        setError("Session de paiement introuvable");
+        setError(t.directPayment.return.sessionNotFound);
         setLoading(false);
         return;
       }
@@ -140,7 +67,7 @@ function DirectPaymentReturnContent() {
       try {
         session = JSON.parse(raw) as DirectPaymentSession;
       } catch {
-        setError("Session de paiement invalide");
+        setError(t.directPayment.return.sessionInvalid);
         setLoading(false);
         return;
       }
@@ -158,19 +85,34 @@ function DirectPaymentReturnContent() {
         );
         setResult(data);
         sessionStorage.removeItem(DIRECT_PAYMENT_SESSION_STORAGE_KEY);
-        notifyOpener({
-          success: data.success,
-          orderId: session.orderId,
-          paymentOrderId: data.paymentOrderId,
-          reference: session.reference,
-          paymentStatus: data.status,
-          returnUrl: session.returnUrl,
-        });
+
+        if (window.opener) {
+          const targetOrigin = (() => {
+            if (!session.returnUrl) {
+              return "*";
+            }
+            try {
+              return new URL(session.returnUrl).origin;
+            } catch {
+              return "*";
+            }
+          })();
+
+          window.opener.postMessage(
+            {
+              type: "yypay:payment:complete",
+              status: data.success ? "success" : "failure",
+              orderId: session.orderId,
+              paymentOrderId: data.paymentOrderId,
+              reference: session.reference,
+              paymentStatus: data.status,
+            },
+            targetOrigin,
+          );
+        }
       } catch (err) {
         setError(
-          err instanceof Error
-            ? err.message
-            : "Erreur lors de la finalisation du paiement",
+          err instanceof Error ? err.message : t.directPayment.return.finalizeError,
         );
       } finally {
         setLoading(false);
@@ -178,6 +120,7 @@ function DirectPaymentReturnContent() {
     }
 
     void finalizePayment();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paymentReturn]);
 
   useEffect(() => {
@@ -205,10 +148,10 @@ function DirectPaymentReturnContent() {
 
   const isSuccess = result?.success;
   const title = loading
-    ? "Finalisation du paiement"
+    ? t.directPayment.return.finalizing
     : isSuccess
-      ? "Paiement réussi"
-      : "Paiement non abouti";
+      ? t.directPayment.return.success
+      : t.directPayment.return.failed;
 
   return (
     <div className="yypay:flex yypay:min-h-full yypay:items-center yypay:justify-center yypay:bg-background yypay:px-4 yypay:py-10">
@@ -224,11 +167,11 @@ function DirectPaymentReturnContent() {
           <CardTitle>{title}</CardTitle>
           <CardDescription>
             {loading
-              ? "Vérification du statut auprès du fournisseur de paiement..."
+              ? t.directPayment.return.verifying
               : error ??
                 (isSuccess
-                  ? "Votre transaction a été confirmée."
-                  : `Statut : ${result?.status ?? "échec"}`)}
+                  ? t.directPayment.return.confirmed
+                  : `${t.directPayment.return.statusPrefix} ${result?.status ?? t.directPayment.return.unknownStatus}`)}
           </CardDescription>
         </CardHeader>
         <CardContent className="yypay:space-y-4 yypay:text-center">
@@ -238,20 +181,20 @@ function DirectPaymentReturnContent() {
             </p>
           )}
           {!loading && result?.orgWalletCredited && (
-            <Badge variant="success">Wallet organisation crédité</Badge>
+            <Badge variant="success">{t.directPayment.return.orgWalletCredited}</Badge>
           )}
           {!loading && (
             <p className="yypay:text-sm yypay:text-muted-foreground">
-              Cette fenêtre se fermera automatiquement dans{" "}
+              {t.directPayment.return.closingIn}{" "}
               <span className="yypay:font-semibold yypay:text-foreground">
                 {secondsLeft}
               </span>{" "}
-              seconde{secondsLeft > 1 ? "s" : ""}.
+              {t.directPayment.return.secondsLabel(secondsLeft)}.
             </p>
           )}
           {!loading && (
             <p className="yypay:text-xs yypay:text-muted-foreground">
-              Si la fenêtre ne se ferme pas, vous pouvez la fermer manuellement.
+              {t.directPayment.return.manualCloseNote}
             </p>
           )}
         </CardContent>

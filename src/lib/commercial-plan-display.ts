@@ -1,78 +1,118 @@
+import type { Messages } from "@/i18n/messages/fr";
 import type { components } from "@/types/schemas-payment";
 
 type CommercialPlanResponse = components["schemas"]["CommercialPlanResponse"];
 
 export type BillingPeriod = "MONTHLY" | "YEARLY";
 
-export function getPlanLabel(plan: CommercialPlanResponse): string {
-  return plan.displayName?.trim() || plan.code || "Plan";
+export function getPlanLabel(plan: CommercialPlanResponse, t: Messages): string {
+  return plan.displayName?.trim() || plan.code || t.plans.defaultPlanFallback;
 }
 
-const TARGET_TYPE_LABELS: Record<string, string> = {
-  ORGANIZATION: "Organisation",
-  ENTERPRISE: "Entreprise",
-  SMB: "PME",
-};
+function targetTypeKey(
+  targetType: string,
+): keyof Messages["plans"]["targetTypes"] | undefined {
+  switch (targetType) {
+    case "ORGANIZATION":
+      return "organization";
+    case "ENTERPRISE":
+      return "enterprise";
+    case "SMB":
+      return "smb";
+    default:
+      return undefined;
+  }
+}
 
-const SERVICE_LABELS: Record<string, string> = {
-  ACCOUNTING: "Comptabilité",
-  CASHIER: "Caisse",
-  TREASURY: "Trésorerie",
-  COMMERCIAL: "Commercial",
-  PRODUCT: "Produits",
-  INVENTORY: "Stock",
-  HR: "Ressources humaines",
-  PAYROLL: "Paie",
-  CRM: "CRM",
-  REPORTING: "Reporting",
-};
+function serviceKey(code: string): keyof Messages["plans"]["services"] | undefined {
+  switch (code) {
+    case "ACCOUNTING":
+      return "accounting";
+    case "CASHIER":
+      return "cashier";
+    case "TREASURY":
+      return "treasury";
+    case "COMMERCIAL":
+      return "commercial";
+    case "PRODUCT":
+      return "product";
+    case "INVENTORY":
+      return "inventory";
+    case "HR":
+      return "hr";
+    case "PAYROLL":
+      return "payroll";
+    case "CRM":
+      return "crm";
+    case "REPORTING":
+      return "reporting";
+    default:
+      return undefined;
+  }
+}
 
-const PACK_LABELS: Record<string, string> = {
-  STARTER_PACK: "Pack démarrage",
-  GROWTH_PACK: "Pack croissance",
-  ENTERPRISE_PACK: "Pack entreprise",
-};
+function packKey(code: string): keyof Messages["plans"]["packs"] | undefined {
+  switch (code) {
+    case "STARTER_PACK":
+      return "starter";
+    case "GROWTH_PACK":
+      return "growth";
+    case "ENTERPRISE_PACK":
+      return "enterprise";
+    default:
+      return undefined;
+  }
+}
 
-export function getTargetTypeLabel(targetType?: string | null): string | null {
+export function getTargetTypeLabel(
+  targetType: string | null | undefined,
+  t: Messages,
+): string | null {
   const trimmed = targetType?.trim();
   if (!trimmed) {
     return null;
   }
-  return TARGET_TYPE_LABELS[trimmed] ?? trimmed;
+  const key = targetTypeKey(trimmed);
+  return key ? t.plans.targetTypes[key] : trimmed;
 }
 
-export function formatBillingPeriodLabel(period: BillingPeriod): string {
-  return period === "MONTHLY" ? "Mensuel" : "Annuel";
+export function formatBillingPeriodLabel(
+  period: BillingPeriod,
+  t: Messages,
+): string {
+  return period === "MONTHLY" ? t.plans.billingPeriod.monthly : t.plans.billingPeriod.yearly;
 }
 
 export function formatQuotedPrice(
-  total?: number | null,
-  currency?: string | null,
-  billingPeriod?: BillingPeriod,
+  total: number | null | undefined,
+  currency: string | null | undefined,
+  billingPeriod: BillingPeriod | undefined,
+  t: Messages,
+  intlTag: string,
 ): string | null {
   if (total == null) {
     return null;
   }
-  const suffix = billingPeriod === "YEARLY" ? "/an" : "/mois";
-  return `${total.toLocaleString("fr-FR")} ${currency ?? "XAF"}${suffix}`;
+  const suffix = billingPeriod === "YEARLY" ? t.plans.perYear : t.plans.perMonth;
+  return `${total.toLocaleString(intlTag)} ${currency ?? "XAF"}${suffix}`;
 }
 
-export function formatFeatureLabel(code: string): string {
-  return (
-    SERVICE_LABELS[code] ??
-    PACK_LABELS[code] ??
-    code
-      .split("_")
-      .map((part) => part.charAt(0) + part.slice(1).toLowerCase())
-      .join(" ")
-  );
+export function formatFeatureLabel(code: string, t: Messages): string {
+  const serviceLabelKey = serviceKey(code);
+  if (serviceLabelKey) return t.plans.services[serviceLabelKey];
+  const packLabelKey = packKey(code);
+  if (packLabelKey) return t.plans.packs[packLabelKey];
+  return code
+    .split("_")
+    .map((part) => part.charAt(0) + part.slice(1).toLowerCase())
+    .join(" ");
 }
 
-export function getPlanFeatures(plan: CommercialPlanResponse): string[] {
+export function getPlanFeatures(plan: CommercialPlanResponse, t: Messages): string[] {
   const packs = (plan.packCodes ?? []).map(
-    (code) => `${formatFeatureLabel(code)} (pack)`,
+    (code) => `${formatFeatureLabel(code, t)} ${t.plans.addOnPackSuffix}`,
   );
-  const services = (plan.serviceCodes ?? []).map(formatFeatureLabel);
+  const services = (plan.serviceCodes ?? []).map((code) => formatFeatureLabel(code, t));
   return [...packs, ...services];
 }
 
@@ -93,12 +133,16 @@ export function getPopularPlanCode(
 }
 
 export function formatYearlyMonthlyEquivalent(
-  total?: number | null,
-  currency?: string | null,
+  total: number | null | undefined,
+  currency: string | null | undefined,
+  t: Messages,
+  intlTag: string,
 ): string | null {
   if (total == null) {
     return null;
   }
   const monthly = Math.round(total / 12);
-  return `soit ${monthly.toLocaleString("fr-FR")} ${currency ?? "XAF"}/mois en facturation annuelle`;
+  return t.plans.yearlyMonthlyEquivalent(
+    `${monthly.toLocaleString(intlTag)} ${currency ?? "XAF"}`,
+  );
 }

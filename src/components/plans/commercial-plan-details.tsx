@@ -1,4 +1,6 @@
 import { Badge } from "@/components/ui/badge";
+import { toIntlTag } from "@/i18n/format";
+import { useLocale } from "@/i18n/locale-provider";
 import {
     formatBillingPeriodLabel,
     formatQuotedPrice,
@@ -54,17 +56,21 @@ export function CommercialPlanDetails({
   billingPeriod = "MONTHLY",
   className,
 }: CommercialPlanDetailsProps) {
-  const targetTypeLabel = getTargetTypeLabel(plan.targetType);
+  const { t, locale } = useLocale();
+  const intlTag = toIntlTag(locale);
+  const targetTypeLabel = getTargetTypeLabel(plan.targetType, t);
   const quotedPrice = formatQuotedPrice(
     quote?.total,
     quote?.currency,
     billingPeriod,
+    t,
+    intlTag,
   );
 
   return (
     <div className={className ?? "yypay:space-y-4"}>
       <div className="yypay:flex yypay:flex-wrap yypay:gap-2">
-        {plan.systemDefault && <Badge>Plan par défaut</Badge>}
+        {plan.systemDefault && <Badge>{t.plans.details.defaultPlan}</Badge>}
         {targetTypeLabel && <Badge variant="secondary">{targetTypeLabel}</Badge>}
         {plan.code && (
           <Badge variant="secondary" className="yypay:font-mono">
@@ -79,11 +85,11 @@ export function CommercialPlanDetails({
 
       <div className="yypay:rounded-lg yypay:border yypay:border-border yypay:bg-muted/40 yypay:p-3">
         <p className="yypay:text-xs yypay:font-medium yypay:uppercase yypay:tracking-wide yypay:text-muted-foreground">
-          Tarif {formatBillingPeriodLabel(billingPeriod).toLowerCase()}
+          {t.plans.details.tariff(formatBillingPeriodLabel(billingPeriod, t).toLowerCase())}
         </p>
         {quoteLoading ? (
           <p className="yypay:mt-1 yypay:text-sm yypay:text-muted-foreground">
-            Calcul du devis…
+            {t.plans.details.calculatingQuote}
           </p>
         ) : quotedPrice ? (
           <p className="yypay:mt-1 yypay:text-2xl yypay:font-bold yypay:text-foreground">
@@ -91,20 +97,20 @@ export function CommercialPlanDetails({
           </p>
         ) : (
           <p className="yypay:mt-1 yypay:text-sm yypay:text-muted-foreground">
-            Devis indisponible pour {getPlanLabel(plan)}.
+            {t.plans.details.quoteUnavailableFor(getPlanLabel(plan, t))}
           </p>
         )}
         <p className="yypay:mt-2 yypay:text-xs yypay:text-muted-foreground">
-          Montant calculé côté serveur via{" "}
+          {t.plans.details.serverNote}{" "}
           <span className="yypay:font-mono">POST /api/plans/&#123;planCode&#125;/quote</span>
           .
         </p>
       </div>
 
-      <CodeList title="Packs inclus" codes={plan.packCodes ?? []} />
-      <CodeList title="Services inclus" codes={plan.serviceCodes ?? []} />
+      <CodeList title={t.plans.details.includedPacks} codes={plan.packCodes ?? []} />
+      <CodeList title={t.plans.details.includedServices} codes={plan.serviceCodes ?? []} />
       <CodeList
-        title="Add-ons compatibles"
+        title={t.plans.details.compatibleAddOns}
         codes={plan.compatibleAddOnCodes ?? []}
       />
     </div>

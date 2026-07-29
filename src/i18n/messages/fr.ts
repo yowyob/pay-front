@@ -315,29 +315,12 @@ const fr = {
     heroDescription:
       "YowYob Payment centralise wallet, transactions et souscription aux services via un parcours sécurisé délégué au Kernel - aucun mot de passe n'est stocké côté front.",
     login: "Se connecter",
-    signUp: "S'inscrire",
     seePricing: "Voir les tarifs",
     trust: {
       delegatedAuth: "Authentification déléguée au Kernel IWM",
       noPasswordStored: "Aucun mot de passe stocké côté front",
       securePayments: "Paiements sécurisés via MYCOOLPAY",
     },
-    subtitle:
-      "Un portefeuille centralisé, des paiements instantanés et une connexion sécurisée pour tous vos services Yowyob.",
-    benchmarkTitle: "Pourquoi YowYob Payment",
-    benchmarkDescription:
-      "Ce que le portefeuille apporte face aux moyens de paiement traditionnels.",
-    benchmarkFeatureHeader: "Fonctionnalité",
-    benchmarkColumns: ["YowYob Payment", "Paiement classique", "Espèces"],
-    benchmarkFeatures: [
-      "Authentification à deux facteurs",
-      "Solde centralisé (wallet)",
-      "Recharge à la demande",
-      "Paiement instantané",
-      "Multi-organisation",
-      "Traçabilité des transactions",
-      "Intégration en un clic (popup)",
-    ],
     howItWorksTitle: "Comment ça marche",
     howItWorksDescription: "Un parcours en 4 étapes, de la connexion au paiement.",
     steps: [
@@ -394,8 +377,8 @@ const fr = {
     welcomeBackDescription: "Connectez-vous pour accéder à votre console.",
     mfaTitle: "Vérification MFA",
     mfaDescription: "Saisissez le code reçu par email.",
-    emailLabel: "E-mail",
-    emailPlaceholder: "exemple : vous@domaine.com",
+    emailLabel: "Identifiant",
+    emailPlaceholder: "Votre identifiant de connexion",
     passwordLabel: "Mot de passe",
     passwordPlaceholder: "Entrez votre mot de passe",
     showPassword: "Afficher le mot de passe",

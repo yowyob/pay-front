@@ -1,3 +1,4 @@
+import type { Messages } from "@/i18n/messages/fr";
 import { getPlanLabel } from "@/lib/commercial-plan-display";
 import type { components } from "@/types/schemas-payment";
 
@@ -35,7 +36,10 @@ export function getActiveSubscription(
   );
 }
 
-export function formatPaidUntil(value?: string | null): string | null {
+export function formatPaidUntil(
+  value: string | null | undefined,
+  intlTag: string,
+): string | null {
   if (!value) {
     return null;
   }
@@ -43,7 +47,7 @@ export function formatPaidUntil(value?: string | null): string | null {
   if (Number.isNaN(date.getTime())) {
     return null;
   }
-  return date.toLocaleDateString("fr-FR", {
+  return date.toLocaleDateString(intlTag, {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -53,24 +57,29 @@ export function formatPaidUntil(value?: string | null): string | null {
 export function getActiveSubscriptionLabel(
   subscription: SubscriptionResponse,
   plans: CommercialPlanResponse[] = [],
+  t: Messages,
 ): string {
   const plan = plans.find((item) => item.code === subscription.planCode);
-  return plan ? getPlanLabel(plan) : subscription.planCode ?? "Plan";
+  return plan ? getPlanLabel(plan, t) : subscription.planCode ?? t.plans.defaultPlanFallback;
 }
 
 export function buildActiveSubscriptionBlockMessage(
   subscription: SubscriptionResponse,
   plans: CommercialPlanResponse[] = [],
+  t: Messages,
+  intlTag: string,
 ): string {
-  const label = getActiveSubscriptionLabel(subscription, plans);
-  const until = formatPaidUntil(subscription.paidUntil);
-  const untilText = until ? ` jusqu'au ${until}` : "";
-  return `Votre abonnement ${label} est actif${untilText}. Le renouvellement manuel sera possible après cette date, ou activez le renouvellement automatique.`;
+  const label = getActiveSubscriptionLabel(subscription, plans, t);
+  const until = formatPaidUntil(subscription.paidUntil, intlTag);
+  const untilText = until ? t.plans.activeSubscriptionUntil(until) : "";
+  return t.plans.activeSubscriptionBlocked(label, untilText);
 }
 
 export function canPurchasePlan(
   subscriptions: SubscriptionResponse[],
   plans: CommercialPlanResponse[] = [],
+  t: Messages,
+  intlTag: string,
   now = Date.now(),
 ): PurchaseGuardResult {
   const activeSubscription = getActiveSubscription(subscriptions, now);
@@ -80,7 +89,7 @@ export function canPurchasePlan(
 
   return {
     allowed: false,
-    reason: buildActiveSubscriptionBlockMessage(activeSubscription, plans),
+    reason: buildActiveSubscriptionBlockMessage(activeSubscription, plans, t, intlTag),
     activeSubscription,
   };
 }
@@ -104,6 +113,6 @@ export function getPendingPlanCodes(
   return pending;
 }
 
-export function buildPendingPaymentMessage(planCode: string): string {
-  return `Un paiement est déjà en cours pour le plan ${planCode}. Finalisez-le ou attendez son expiration avant d'en lancer un nouveau.`;
+export function buildPendingPaymentMessage(planCode: string, t: Messages): string {
+  return t.plans.pendingPayment(planCode);
 }

@@ -11,15 +11,13 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { YOWAUTH_SIGNUP_URL } from "@/lib/external-auth";
+
+import { useLocale } from "@/i18n/locale-provider";
 import {
     organizationsPath as buildOrganizationsPath,
     tenantsPath as buildTenantsPath,
-    mfaPath as buildMfaPath,
     hardNavigate,
 } from "@/lib/auth-wizard-navigation";
-import { performLogin } from "@/lib/auth-login-flow";
 import { bffPostEnvelope } from "@/lib/bff-client";
 import { useAuthWizardStore } from "@/stores/auth-wizard-store";
 import type { components } from "@/types/schemas-auth";
@@ -48,6 +46,7 @@ export default function LoginPage() {
 
 function LoginPageContent() {
   const router = useRouter();
+  const { t } = useLocale();
   const searchParams = useSearchParams();
   const returnTo = searchParams.get("returnTo");
   const stepParam = searchParams.get("step");
@@ -55,8 +54,6 @@ function LoginPageContent() {
     setCredentials,
     setDiscoverData,
     setSelectionToken,
-    setSelectedContext,
-    setMfaToken,
     mfaToken,
     email,
     password,
@@ -81,48 +78,21 @@ function LoginPageContent() {
     setLoading(true);
     try {
       const result = await bffPostEnvelope<DiscoverLoginContextsResponse>(
-        "/pay/api/auth/discover-contexts",
+        "/api/auth/discover-contexts",
         { principal, password: secret },
       );
       const data = result.data;
       if (!data?.selectionToken) {
-        throw new Error("Identifiants invalides ou aucun tenant disponible");
+        throw new Error(t.login.invalidCredentials);
       }
 
       setCredentials(principal, secret);
       setSelectionToken(data.selectionToken);
       setDiscoverData(data);
-
-      // Un seul contexte : inutile de passer par la sélection de tenant / select-context. On récupère
-      // le tenant de ce contexte et on se connecte directement (le login accepte X-Tenant-Id).
-      const contexts = data.contexts ?? [];
-      const single = contexts.length === 1 ? contexts[0] : null;
-      if (single?.tenantId) {
-        const loginResult = await performLogin(
-          principal,
-          secret,
-          single.tenantId,
-        );
-        if (single.contextId) {
-          setSelectedContext(single.contextId, single.tenantId);
-        }
-        if (loginResult.kind === "authenticated") {
-          toast.success("Authentification réussie");
-          hardNavigate(organizationsPath());
-          return;
-        }
-        setMfaToken(loginResult.mfaToken);
-        toast.success("Code MFA envoyé par email");
-        hardNavigate(buildMfaPath(returnTo));
-        return;
-      }
-
-      toast.success("Identifiants validés — choisissez votre tenant");
+      toast.success(t.login.credentialsValidated);
       hardNavigate(tenantsPath());
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Échec de la connexion",
-      );
+      toast.error(error instanceof Error ? error.message : t.login.loginFailed);
     } finally {
       setLoading(false);
     }
@@ -136,12 +106,10 @@ function LoginPageContent() {
         mfaToken: mfaToken || useAuthWizardStore.getState().mfaToken,
         code,
       });
-      toast.success("Authentification réussie");
+      toast.success(t.login.authSuccess);
       hardNavigate(organizationsPath());
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Code MFA invalide",
-      );
+      toast.error(error instanceof Error ? error.message : t.login.invalidMfaCode);
     } finally {
       setLoading(false);
     }
@@ -153,62 +121,46 @@ function LoginPageContent() {
       <main className="yypay:flex yypay:flex-1 yypay:items-center yypay:justify-center yypay:px-4 yypay:py-10">
         <Card className="yypay:w-full yypay:max-w-lg yypay:shadow-md">
           <CardHeader className="yypay:pb-2">
-            <Tabs value="login">
-              <TabsList className="yypay:grid yypay:w-full yypay:grid-cols-2">
-                <TabsTrigger value="login">Se connecter</TabsTrigger>
-                <TabsTrigger
-                  value="signup"
-                  onClick={(e) => {
-                    // L'inscription est assurée par le portail YowAuth (pas ici).
-                    e.preventDefault();
-                    window.location.href = YOWAUTH_SIGNUP_URL;
-                  }}
-                >
-                  Créer un compte
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="login" className="yypay:mt-6">
-                {step === "credentials" ? (
-                  <>
-                    <CardTitle className="yypay:text-2xl">Bon retour.</CardTitle>
-                    <CardDescription>
-                      Connectez-vous pour accéder à votre console.
-                    </CardDescription>
-                  </>
-                ) : (
-                  <>
-                    <CardTitle className="yypay:text-2xl">
-                      Vérification MFA
-                    </CardTitle>
-                    <CardDescription>
-                      Saisissez le code reçu par email.
-                    </CardDescription>
-                  </>
-                )}
-              </TabsContent>
-            </Tabs>
+            {step === "credentials" ? (
+              <>
+                <CardTitle className="yypay:text-2xl">{t.login.welcomeBackTitle}</CardTitle>
+                <CardDescription>
+                  {t.login.welcomeBackDescription}
+                </CardDescription>
+              </>
+            ) : (
+              <>
+                <CardTitle className="yypay:text-2xl">
+                  {t.login.mfaTitle}
+                </CardTitle>
+                <CardDescription>
+                  {t.login.mfaDescription}
+                </CardDescription>
+              </>
+            )}
           </CardHeader>
           <CardContent>
             {step === "credentials" ? (
               <form onSubmit={handleLogin} className="yypay:space-y-4">
                 <div className="yypay:space-y-2">
-                  <Label htmlFor="email">E-mail</Label>
+                  <Label htmlFor="identifier">{t.login.emailLabel}</Label>
                   <Input
-                    id="email"
-                    type="email"
-                    placeholder="exemple : vous@domaine.com"
+                    id="identifier"
+                    type="text"
+                    placeholder={t.login.emailPlaceholder}
                     value={principal}
                     onChange={(e) => setPrincipal(e.target.value)}
                     required
+                    autoComplete="username"
                   />
                 </div>
                 <div className="yypay:space-y-2">
-                  <Label htmlFor="password">Mot de passe</Label>
+                  <Label htmlFor="password">{t.login.passwordLabel}</Label>
                   <div className="yypay:relative">
                     <Input
                       id="password"
                       type={showPassword ? "text" : "password"}
-                      placeholder="Entrez votre mot de passe"
+                      placeholder={t.login.passwordPlaceholder}
                       value={secret}
                       onChange={(e) => setSecret(e.target.value)}
                       required
@@ -220,8 +172,8 @@ function LoginPageContent() {
                       className="yypay:absolute yypay:right-3 yypay:top-1/2 yypay:-translate-y-1/2 yypay:text-secondary"
                       aria-label={
                         showPassword
-                          ? "Masquer le mot de passe"
-                          : "Afficher le mot de passe"
+                          ? t.login.hidePassword
+                          : t.login.showPassword
                       }
                     >
                       {showPassword ? (
@@ -236,13 +188,13 @@ function LoginPageContent() {
                   {loading && (
                     <Loader2 className="yypay:h-4 yypay:w-4 yypay:animate-spin" />
                   )}
-                  Continuer
+                  {t.login.continueCta}
                 </Button>
               </form>
             ) : (
               <form onSubmit={handleMfa} className="yypay:space-y-4">
                 <div className="yypay:space-y-2">
-                  <Label htmlFor="mfa">Code MFA</Label>
+                  <Label htmlFor="mfa">{t.login.mfaCodeLabel}</Label>
                   <Input
                     id="mfa"
                     inputMode="numeric"
@@ -257,7 +209,7 @@ function LoginPageContent() {
                   {loading && (
                     <Loader2 className="yypay:h-4 yypay:w-4 yypay:animate-spin" />
                   )}
-                  Vérifier le code
+                  {t.login.verifyCodeCta}
                 </Button>
                 <Button
                   type="button"
@@ -265,13 +217,16 @@ function LoginPageContent() {
                   className="yypay:w-full"
                   onClick={() => router.push(tenantsPath())}
                 >
-                  Retour au choix du tenant
+                  {t.login.backToTenant}
                 </Button>
               </form>
             )}
-            <p className="yypay:mt-6 yypay:text-center yypay:text-xs yypay:text-primary">
+            <p className="yypay:mt-6 yypay:text-center yypay:text-xs yypay:text-secondary">
+              {t.login.delegatedAuthNote}
+            </p>
+            <p className="yypay:mt-2 yypay:text-center yypay:text-xs yypay:text-primary">
               <Link href="/" className="hover:yypay:text-primary">
-                Retour à l&apos;accueil
+                {t.login.backHome}
               </Link>
             </p>
           </CardContent>

@@ -1,3 +1,4 @@
+import type { Messages } from "@/i18n/messages/fr";
 import type { components } from "@/types/schemas-payment";
 
 type TransactionResponse = components["schemas"]["TransactionResponse"];
@@ -50,99 +51,78 @@ const FAILED_STATUSES = new Set([
   "EXPIRED",
 ]);
 
-export function getActivityStatusVariant(
-  status?: string,
-): "success" | "secondary" | "default" {
+export type ActivityStatusGroup = "success" | "pending" | "failed" | "other";
+
+export function getActivityStatusGroup(status?: string): ActivityStatusGroup {
   const normalized = status?.trim().toUpperCase() ?? "";
   if (SUCCESS_STATUSES.has(normalized)) {
     return "success";
   }
   if (PENDING_STATUSES.has(normalized)) {
-    return "secondary";
+    return "pending";
   }
   if (FAILED_STATUSES.has(normalized)) {
-    return "default";
+    return "failed";
   }
-  return "secondary";
+  return "other";
 }
 
-export type ActivityDirection = "in" | "out" | "neutral";
-
-export type ActivityStatusGroup = "success" | "pending" | "failed";
-
-// Sens du mouvement d'argent. Le back n'expose pas de champ « direction » : on le dérive de la
-// source (une recharge crédite le wallet = entrée ; paiements/plans/bundles = sorties) et, pour les
-// transactions wallet natives, du type (CREDIT/RECHARGE = entrée, DEBIT/PAYMENT = sortie).
-const WALLET_IN_TYPES = new Set([
-  "CREDIT",
-  "RECHARGE",
-  "RECHARGE_WALLET",
-  "DEPOSIT",
-  "TOPUP",
-  "TOP_UP",
-  "REFUND",
-  "REVERSAL",
-  "RECEIVE",
-  "IN",
-]);
-
-const WALLET_OUT_TYPES = new Set([
-  "DEBIT",
-  "PAYMENT",
-  "WITHDRAW",
-  "WITHDRAWAL",
-  "PURCHASE",
-  "TRANSFER",
-  "TRANSFER_OUT",
-  "OUT",
-]);
-
-export function getActivityDirection(item: PaymentActivityItem): ActivityDirection {
-  switch (item.source) {
-    case "recharge_order":
-      return "in";
-    case "payment_order":
-    case "plan_order":
-    case "bundle_order":
-      return "out";
-    case "wallet": {
-      const normalized = item.type?.trim().toUpperCase() ?? "";
-      if (WALLET_IN_TYPES.has(normalized)) return "in";
-      if (WALLET_OUT_TYPES.has(normalized)) return "out";
-      return "neutral";
-    }
+export function getActivityStatusVariant(
+  status?: string,
+): "success" | "secondary" | "destructive" {
+  switch (getActivityStatusGroup(status)) {
+    case "success":
+      return "success";
+    case "failed":
+      return "destructive";
     default:
-      return "neutral";
+      return "secondary";
   }
 }
 
-export function getActivityStatusGroup(status?: string): ActivityStatusGroup {
+const STATUS_LABEL_KEYS: Record<
+  string,
+  keyof Messages["transactionList"]["statusLabels"]
+> = {
+  SUCCESS: "success",
+  SUCCESSFUL: "success",
+  COMPLETED: "success",
+  PAID: "success",
+  ACTIVE: "active",
+  RECHARGED: "recharged",
+  PENDING: "pending",
+  PENDING_PAYMENT: "pending",
+  PROCESSING: "processing",
+  FAILED: "failed",
+  CANCELLED: "cancelled",
+  CANCELED: "cancelled",
+  REJECTED: "rejected",
+  EXPIRED: "expired",
+};
+
+export function formatActivityStatusLabel(
+  status: string | undefined,
+  t: Messages,
+): string {
   const normalized = status?.trim().toUpperCase() ?? "";
-  if (FAILED_STATUSES.has(normalized)) return "failed";
-  if (PENDING_STATUSES.has(normalized)) return "pending";
-  return "success";
+  const key = STATUS_LABEL_KEYS[normalized];
+  return key ? t.transactionList.statusLabels[key] : status ?? t.transactionList.statusLabels.unknown;
 }
 
-// Ne compte dans les totaux entrées/sorties que les opérations réussies (une recharge en attente ou
-// échouée n'a pas crédité le solde).
-export function isSettledActivity(item: PaymentActivityItem): boolean {
-  return getActivityStatusGroup(item.status) === "success";
-}
-
-export function formatActivityType(item: PaymentActivityItem): string {
+export function formatActivityType(item: PaymentActivityItem, t: Messages): string {
   switch (item.source) {
     case "wallet":
       return item.type;
     case "recharge_order":
-      return "Recharge wallet";
+      return t.transactionList.types.rechargeWallet;
     case "payment_order":
-      return `Paiement ${item.type}`;
+      return t.transactionList.types.payment(item.type);
     case "plan_order":
-      return item.type.startsWith("PLAN_")
-        ? `Plan ${item.type.slice(5)}`
-        : `Plan ${item.type}`;
+      return t.transactionList.types.plan(
+        item.type.startsWith("PLAN_") ? item.type.slice(5) : item.type,
+      );
     case "bundle_order":
-      return "Bundle services";
+      return t.transactionList.types.bundleServices;
     default: {
       const exhaustive: never = item.source;
       return exhaustive;
@@ -150,11 +130,14 @@ export function formatActivityType(item: PaymentActivityItem): string {
   }
 }
 
-export function formatActivityAmount(item: PaymentActivityItem): string {
+export function formatActivityAmount(
+  item: PaymentActivityItem,
+  intlTag: string,
+): string {
   if (item.amount == null) {
     return "-";
   }
-  const formatted = item.amount.toLocaleString("fr-FR");
+  const formatted = item.amount.toLocaleString(intlTag);
   return item.currency ? `${formatted} ${item.currency}` : formatted;
 }
 

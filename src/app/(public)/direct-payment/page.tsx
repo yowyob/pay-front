@@ -10,12 +10,12 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toIntlTag } from "@/i18n/format";
+import { useLocale } from "@/i18n/locale-provider";
 import { bffFetch } from "@/lib/bff-client";
-import {
-  DIRECT_WALLET_COMPLETION_STORAGE_KEY,
-  RECHARGE_ORDER_STORAGE_KEY,
-} from "@/lib/bundle-constants";
-import { CreditCard, Loader2, ShoppingBag, Wallet } from "lucide-react";
+import { DIRECT_PAYMENT_SESSION_STORAGE_KEY } from "@/lib/bundle-constants";
+import type { DirectPaymentSession } from "@/lib/direct-payment";
+import { CreditCard, Loader2, ShoppingBag } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -36,31 +36,16 @@ type DirectPaymentContextResponse = {
   checkoutType: "plan" | "bundle" | "payment";
 };
 
-/** Paiement réglé depuis le portefeuille : rien à finaliser côté provider, juste à confirmer. */
-type WalletPaid = {
-  status: "paid";
-  walletId: string;
-  reference: string;
-  amount: number;
-  currency: string;
-  label: string;
-  returnUrl?: string;
+type CheckoutResponse = {
+  orderId: string;
+  orderType: "plan" | "bundle" | "payment";
+  paymentOrderId?: string;
+  redirectUrl?: string;
+  session: DirectPaymentSession;
 };
 
-/** Solde insuffisant : aucun débit, on connaît le manque exact à recharger. */
-type WalletInsufficient = {
-  status: "insufficient";
-  walletId: string;
-  balance: number;
-  total: number;
-  shortfall: number;
-  currency: string;
-};
-
-type WalletDecision = WalletPaid | WalletInsufficient;
-
-function formatAmount(amount: number, currency: string) {
-  return new Intl.NumberFormat("fr-FR", {
+function formatAmount(amount: number, currency: string, intlTag: string) {
+  return new Intl.NumberFormat(intlTag, {
     style: "currency",
     currency,
     maximumFractionDigits: 0,
@@ -83,15 +68,13 @@ export default function DirectPaymentPage() {
 
 function DirectPaymentContent() {
   const router = useRouter();
+  const { t, locale } = useLocale();
+  const intlTag = toIntlTag(locale);
   const searchParams = useSearchParams();
   const queryString = useMemo(() => searchParams.toString(), [searchParams]);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
-  const [recharging, setRecharging] = useState(false);
   const [context, setContext] = useState<DirectPaymentContextResponse | null>(
-    null,
-  );
-  const [insufficient, setInsufficient] = useState<WalletInsufficient | null>(
     null,
   );
   const [error, setError] = useState<string | null>(null);
@@ -99,7 +82,7 @@ function DirectPaymentContent() {
   useEffect(() => {
     async function loadContext() {
       if (!queryString) {
-        setError("Paramètres de paiement manquants");
+        setError(t.directPayment.missingParams);
         setLoading(false);
         return;
       }
@@ -109,27 +92,12 @@ function DirectPaymentContent() {
           "/api/session/context",
         ).catch(() => null);
 
-        // Aucune session : la fenêtre exige une connexion (avec MFA) avant tout paiement.
         if (!session) {
           const returnTo = `/direct-payment?${queryString}`;
-          router.replace(`/login?returnTo=${encodeURIComponent(returnTo)}`);
+          router.replace(
+            `/login?returnTo=${encodeURIComponent(returnTo)}`,
+          );
           return;
-        }
-
-        // Retour d'une recharge MyCoolPay : on CONFIRME l'ordre de recharge auprès du Kernel
-        // (poll du provider → statut RECHARGED + crédit du wallet). Sans cette étape, la recharge
-        // reste PENDING_PAYMENT côté Kernel et le solde n'est jamais crédité — le solde resterait
-        // insuffisant au moment de payer.
-        const pendingRecharge =
-          typeof window !== "undefined"
-            ? sessionStorage.getItem(RECHARGE_ORDER_STORAGE_KEY)
-            : null;
-        if (pendingRecharge) {
-          sessionStorage.removeItem(RECHARGE_ORDER_STORAGE_KEY);
-          await bffFetch(
-            `/api/payments/wallets/recharge-orders/${pendingRecharge}/refresh`,
-            { method: "POST" },
-          ).catch(() => null);
         }
 
         const data = await bffFetch<DirectPaymentContextResponse>(
@@ -137,89 +105,44 @@ function DirectPaymentContent() {
         );
         setContext(data);
       } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Impossible de charger le paiement",
-        );
+        setError(err instanceof Error ? err.message : t.directPayment.loadError);
       } finally {
         setLoading(false);
       }
     }
 
     void loadContext();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryString, router]);
 
-  /** Paiement DEPUIS LE PORTEFEUILLE. Si le solde manque, on bascule sur l'étape de recharge. */
   async function handlePay() {
     if (!queryString) {
       return;
     }
     setPaying(true);
-    setError(null);
     try {
-      const decision = await bffFetch<WalletDecision>(
-        `/api/direct-payment/wallet-pay?${queryString}`,
+      const result = await bffFetch<CheckoutResponse>(
+        `/api/direct-payment/checkout?${queryString}`,
         { method: "POST" },
       );
-
-      if (decision.status === "insufficient") {
-        setInsufficient(decision);
-        return;
-      }
-
-      // Réglé : on transmet le résultat à la page de statut (qui notifie la plateforme appelante).
       sessionStorage.setItem(
-        DIRECT_WALLET_COMPLETION_STORAGE_KEY,
-        JSON.stringify({
-          success: true,
-          walletId: decision.walletId,
-          reference: decision.reference,
-          amount: decision.amount,
-          currency: decision.currency,
-          label: decision.label,
-          returnUrl: decision.returnUrl,
-        }),
+        DIRECT_PAYMENT_SESSION_STORAGE_KEY,
+        JSON.stringify(result.session),
       );
-      router.replace("/direct-payment/return?payment=success&flow=wallet");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Échec du paiement");
-    } finally {
-      setPaying(false);
-    }
-  }
-
-  /** Recharge du différentiel manquant, via le provider ; retour ensuite sur cette même fenêtre. */
-  async function handleRecharge() {
-    if (!queryString) {
-      return;
-    }
-    setRecharging(true);
-    try {
-      const result = await bffFetch<{
-        redirectUrl: string;
-        orderId?: string;
-        amount: number;
-      }>(`/api/direct-payment/wallet-recharge?${queryString}`, {
-        method: "POST",
-      });
-      // On mémorise l'ordre de recharge pour le CONFIRMER au retour (cf. loadContext).
-      if (result.orderId) {
-        sessionStorage.setItem(RECHARGE_ORDER_STORAGE_KEY, result.orderId);
+      if (!result.redirectUrl) {
+        throw new Error(t.directPayment.redirectUrlMissing);
       }
       window.location.assign(result.redirectUrl);
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Échec du lancement de la recharge",
-      );
-      setRecharging(false);
+      toast.error(err instanceof Error ? err.message : t.directPayment.launchError);
+      setPaying(false);
     }
   }
 
   const modeLabel =
     context?.mode === "of_org"
-      ? "Achat d'un service de l'organisation"
-      : "Achat pour l'organisation";
+      ? t.directPayment.modeOfOrg
+      : t.directPayment.modeForOrg;
 
   return (
     <div className="yypay:flex yypay:min-h-full yypay:flex-col yypay:bg-background">
@@ -233,7 +156,7 @@ function DirectPaymentContent() {
               YowYob Payment
             </p>
             <h1 className="yypay:text-lg yypay:font-semibold yypay:text-foreground">
-              Paiement direct
+              {t.directPayment.brandTitle}
             </h1>
           </div>
         </div>
@@ -248,10 +171,10 @@ function DirectPaymentContent() {
           </div>
         )}
 
-        {!loading && error && !context && (
+        {!loading && error && (
           <Card>
             <CardHeader>
-              <CardTitle>Paiement indisponible</CardTitle>
+              <CardTitle>{t.directPayment.unavailableTitle}</CardTitle>
               <CardDescription>{error}</CardDescription>
             </CardHeader>
           </Card>
@@ -274,87 +197,38 @@ function DirectPaymentContent() {
             <CardContent className="yypay:space-y-6">
               <dl className="yypay:space-y-3 yypay:text-sm">
                 <div className="yypay:flex yypay:justify-between yypay:gap-4">
-                  <dt className="yypay:text-muted-foreground">Quantité</dt>
+                  <dt className="yypay:text-muted-foreground">{t.directPayment.quantityLabel}</dt>
                   <dd className="yypay:font-medium">{context.quantity}</dd>
                 </div>
                 <div className="yypay:flex yypay:justify-between yypay:gap-4">
-                  <dt className="yypay:text-muted-foreground">Prix unitaire</dt>
+                  <dt className="yypay:text-muted-foreground">{t.directPayment.unitPriceLabel}</dt>
                   <dd className="yypay:font-medium">
-                    {formatAmount(context.unitAmount, context.currency)}
+                    {formatAmount(context.unitAmount, context.currency, intlTag)}
                   </dd>
                 </div>
                 <div className="yypay:flex yypay:justify-between yypay:gap-4 yypay:border-t yypay:border-border yypay:pt-3">
-                  <dt className="yypay:font-semibold">Total</dt>
+                  <dt className="yypay:font-semibold">{t.directPayment.totalLabel}</dt>
                   <dd className="yypay:text-lg yypay:font-bold yypay:text-primary">
-                    {formatAmount(context.totalAmount, context.currency)}
+                    {formatAmount(context.totalAmount, context.currency, intlTag)}
                   </dd>
                 </div>
               </dl>
 
-              {insufficient ? (
-                <div className="yypay:space-y-4 yypay:rounded-lg yypay:border yypay:border-border yypay:bg-muted/40 yypay:p-4">
-                  <div className="yypay:flex yypay:items-center yypay:gap-2 yypay:text-sm yypay:font-medium">
-                    <Wallet className="yypay:h-4 yypay:w-4 yypay:text-primary" />
-                    Solde de votre portefeuille insuffisant
-                  </div>
-                  <dl className="yypay:space-y-2 yypay:text-sm">
-                    <div className="yypay:flex yypay:justify-between yypay:gap-4">
-                      <dt className="yypay:text-muted-foreground">Solde actuel</dt>
-                      <dd className="yypay:font-medium">
-                        {formatAmount(insufficient.balance, insufficient.currency)}
-                      </dd>
-                    </div>
-                    <div className="yypay:flex yypay:justify-between yypay:gap-4">
-                      <dt className="yypay:text-muted-foreground">
-                        Montant à recharger
-                      </dt>
-                      <dd className="yypay:font-semibold yypay:text-primary">
-                        {formatAmount(
-                          insufficient.shortfall,
-                          insufficient.currency,
-                        )}
-                      </dd>
-                    </div>
-                  </dl>
-                  <Button
-                    className="yypay:w-full"
-                    size="lg"
-                    onClick={handleRecharge}
-                    disabled={recharging}
-                  >
-                    {recharging && (
-                      <Loader2 className="yypay:h-4 yypay:w-4 yypay:animate-spin" />
-                    )}
-                    Recharger{" "}
-                    {formatAmount(insufficient.shortfall, insufficient.currency)}{" "}
-                    et payer
-                  </Button>
-                  <p className="yypay:text-center yypay:text-xs yypay:text-muted-foreground">
-                    Après la recharge, vous reviendrez ici pour régler l&apos;achat
-                    depuis votre portefeuille.
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <Button
-                    className="yypay:w-full"
-                    size="lg"
-                    onClick={handlePay}
-                    disabled={paying}
-                  >
-                    {paying ? (
-                      <Loader2 className="yypay:h-4 yypay:w-4 yypay:animate-spin" />
-                    ) : (
-                      <Wallet className="yypay:h-4 yypay:w-4" />
-                    )}
-                    Payer depuis mon portefeuille
-                  </Button>
-                  <p className="yypay:text-center yypay:text-xs yypay:text-muted-foreground">
-                    Le paiement est prélevé sur le solde de votre portefeuille
-                    YowYob. Le montant est recalculé côté serveur.
-                  </p>
-                </>
-              )}
+              <Button
+                className="yypay:w-full"
+                size="lg"
+                onClick={handlePay}
+                disabled={paying}
+              >
+                {paying && (
+                  <Loader2 className="yypay:h-4 yypay:w-4 yypay:animate-spin" />
+                )}
+                {t.directPayment.payWithMycoolpay}
+              </Button>
+
+              <p className="yypay:text-center yypay:text-xs yypay:text-muted-foreground">
+                {t.directPayment.serverRecalcNote}
+              </p>
             </CardContent>
           </Card>
         )}

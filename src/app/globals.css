@@ -68,6 +68,18 @@
   --shadow-card: var(--app-shadow-card);
   --shadow-card-hover: var(--app-shadow-card-hover);
   --shadow-popular: var(--app-shadow-popular);
+  --animate-onboarding-in: onboarding-in 0.25s ease-out;
+}
+
+@keyframes onboarding-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 html {

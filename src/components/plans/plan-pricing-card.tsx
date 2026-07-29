@@ -4,6 +4,8 @@ import { PlanAutoRenewalToggle } from "@/components/plans/plan-auto-renewal-togg
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toIntlTag } from "@/i18n/format";
+import { useLocale } from "@/i18n/locale-provider";
 import {
     formatBillingPeriodLabel,
     formatFeatureLabel,
@@ -67,13 +69,15 @@ export function PlanPricingCard({
   isPendingPayment = false,
   purchaseBlocked = false,
   blockMessage,
-  ctaLabel = "Sélectionner",
+  ctaLabel,
   onSelect,
   disabled = false,
 }: PlanPricingCardProps) {
+  const { t, locale } = useLocale();
+  const intlTag = toIntlTag(locale);
   const [expanded, setExpanded] = useState(false);
   const planCode = plan.code ?? "";
-  const features = getPlanFeatures(plan);
+  const features = getPlanFeatures(plan, t);
   const addOns = plan.compatibleAddOnCodes ?? [];
   const visibleFeatures = expanded ? features : features.slice(0, VISIBLE_FEATURES);
   const hasMoreFeatures = features.length > VISIBLE_FEATURES || addOns.length > 0;
@@ -81,10 +85,12 @@ export function PlanPricingCard({
     quote?.total,
     quote?.currency,
     billingPeriod,
+    t,
+    intlTag,
   );
   const yearlyNote =
     billingPeriod === "YEARLY"
-      ? formatYearlyMonthlyEquivalent(quote?.total, quote?.currency)
+      ? formatYearlyMonthlyEquivalent(quote?.total, quote?.currency, t, intlTag)
       : null;
 
   const isActivePlan = Boolean(
@@ -93,7 +99,7 @@ export function PlanPricingCard({
       isSubscriptionStillValid(activeSubscription),
   );
 
-  const paidUntilLabel = formatPaidUntil(activeSubscription?.paidUntil);
+  const paidUntilLabel = formatPaidUntil(activeSubscription?.paidUntil, intlTag);
 
   const ctaDisabled =
     disabled ||
@@ -105,19 +111,19 @@ export function PlanPricingCard({
     !quotedPrice ||
     !onSelect;
 
-  let ctaText = ctaLabel;
+  let ctaText = ctaLabel ?? t.plans.section.selectCta;
   if (isActivePlan) {
     ctaText = paidUntilLabel
-      ? `Actif jusqu'au ${paidUntilLabel}`
-      : "Plan actif";
+      ? t.plans.card.activeUntil(paidUntilLabel)
+      : t.plans.card.activePlan;
   } else if (isPendingPayment) {
-    ctaText = "Paiement en cours";
+    ctaText = t.plans.card.paymentInProgress;
   } else if (inCart) {
-    ctaText = "Dans le panier";
+    ctaText = t.plans.card.inCart;
   } else if (quoteLoading) {
-    ctaText = "Calcul du tarif…";
+    ctaText = t.plans.card.calculatingPrice;
   } else if (!quotedPrice) {
-    ctaText = "Devis indisponible";
+    ctaText = t.plans.card.quoteUnavailable;
   }
 
   return (
@@ -131,14 +137,14 @@ export function PlanPricingCard({
     >
       {highlighted && (
         <div className="yypay:rounded-t-2xl yypay:bg-primary yypay:px-4 yypay:py-2 yypay:text-center yypay:text-xs yypay:font-semibold yypay:tracking-wide yypay:text-primary-foreground yypay:uppercase">
-          Le plus populaire
+          {t.plans.card.mostPopular}
         </div>
       )}
 
       <div className="yypay:flex yypay:flex-1 yypay:flex-col yypay:p-6 sm:yypay:p-7">
         <div className="yypay:space-y-1">
           <h3 className="yypay:text-xl yypay:font-bold yypay:text-foreground sm:yypay:text-2xl">
-            {getPlanLabel(plan)}
+            {getPlanLabel(plan, t)}
           </h3>
           {plan.description ? (
             <p className="yypay:text-sm yypay:text-muted-foreground">
@@ -146,7 +152,7 @@ export function PlanPricingCard({
             </p>
           ) : (
             <p className="yypay:text-sm yypay:text-muted-foreground">
-              Plan {plan.code}
+              {t.plans.card.planFallback(plan.code ?? "")}
             </p>
           )}
         </div>
@@ -167,11 +173,11 @@ export function PlanPricingCard({
             </>
           ) : (
             <p className="yypay:text-sm yypay:text-muted-foreground">
-              Tarif {formatBillingPeriodLabel(billingPeriod).toLowerCase()} sur devis
+              {t.plans.card.quoteOnRequest(formatBillingPeriodLabel(billingPeriod, t).toLowerCase())}
             </p>
           )}
           <p className="yypay:mt-2 yypay:text-xs yypay:text-muted-foreground">
-            Prix calculé côté serveur - sans surprise à la caisse.
+            {t.plans.card.priceNote}
           </p>
         </div>
 
@@ -193,8 +199,7 @@ export function PlanPricingCard({
 
         {isPendingPayment && (
           <p className="yypay:mt-2 yypay:text-xs yypay:text-muted-foreground">
-            Finalisez le paiement MYCOOLPAY en cours avant d&apos;en lancer un
-            nouveau.
+            {t.plans.card.finalizePayment}
           </p>
         )}
 
@@ -234,7 +239,7 @@ export function PlanPricingCard({
                   className="yypay:mt-0.5 yypay:h-4 yypay:w-4 yypay:shrink-0 yypay:text-success/70"
                   aria-hidden
                 />
-                <span>Add-on : {formatFeatureLabel(code)}</span>
+                <span>{t.plans.card.addOnPrefix} {formatFeatureLabel(code, t)}</span>
               </li>
             ))}
         </ul>
@@ -246,7 +251,7 @@ export function PlanPricingCard({
             onClick={() => setExpanded((value) => !value)}
             aria-expanded={expanded}
           >
-            {expanded ? "Réduire" : "Voir toutes les fonctionnalités"}
+            {expanded ? t.plans.card.collapse : t.plans.card.seeAllFeatures}
             {expanded ? (
               <ChevronUp className="yypay:h-4 yypay:w-4" />
             ) : (
@@ -256,9 +261,11 @@ export function PlanPricingCard({
         )}
 
         <div className="yypay:mt-5 yypay:flex yypay:flex-wrap yypay:gap-2">
-          {plan.systemDefault && <Badge>Par défaut</Badge>}
-          {isActivePlan && <Badge variant="success">Actif</Badge>}
-          {isPendingPayment && <Badge variant="secondary">Paiement en cours</Badge>}
+          {plan.systemDefault && <Badge>{t.plans.card.default}</Badge>}
+          {isActivePlan && <Badge variant="success">{t.plans.card.active}</Badge>}
+          {isPendingPayment && (
+            <Badge variant="secondary">{t.plans.card.paymentInProgress}</Badge>
+          )}
         </div>
       </div>
     </article>

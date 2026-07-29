@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/i18n/locale-provider";
 import {
     formatBillingPeriodLabel,
     type BillingPeriod,
@@ -17,6 +18,7 @@ export function BillingPeriodToggle({
   onChange,
   className,
 }: BillingPeriodToggleProps) {
+  const { t } = useLocale();
   return (
     <div
       className={cn(
@@ -24,7 +26,7 @@ export function BillingPeriodToggle({
         className,
       )}
       role="group"
-      aria-label="Période de facturation"
+      aria-label={t.plans.billingToggleAriaLabel}
     >
       {(["MONTHLY", "YEARLY"] as const).map((period) => {
         const selected = value === period;
@@ -42,7 +44,7 @@ export function BillingPeriodToggle({
             )}
             aria-pressed={selected}
           >
-            {formatBillingPeriodLabel(period)}
+            {formatBillingPeriodLabel(period, t)}
           </button>
         );
       })}

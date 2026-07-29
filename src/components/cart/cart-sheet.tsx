@@ -11,6 +11,8 @@ import {
     SheetTitle,
     SheetTrigger,
 } from "@/components/ui/sheet";
+import { toIntlTag } from "@/i18n/format";
+import { useLocale } from "@/i18n/locale-provider";
 import { bffGet, bffPost } from "@/lib/bff-client";
 import { COMMERCIAL_PLAN_ORDER_STORAGE_KEY } from "@/lib/bundle-constants";
 import {
@@ -83,6 +85,8 @@ function useIsMobile() {
 }
 
 export function CartSheet({ trigger, walletName, onCheckoutComplete }: CartSheetProps) {
+  const { t, locale } = useLocale();
+  const intlTag = toIntlTag(locale);
   const [open, setOpen] = useState(false);
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>("MONTHLY");
   const [quote, setQuote] = useState<AggregatedQuote | null>(null);
@@ -167,11 +171,7 @@ export function CartSheet({ trigger, walletName, onCheckoutComplete }: CartSheet
         .catch((error) => {
           if (!cancelled) {
             setQuote(null);
-            toast.error(
-              error instanceof Error
-                ? error.message
-                : "Impossible de calculer le devis",
-            );
+            toast.error(error instanceof Error ? error.message : t.cart.quoteError);
           }
         })
         .finally(() => {
@@ -185,6 +185,7 @@ export function CartSheet({ trigger, walletName, onCheckoutComplete }: CartSheet
       cancelled = true;
       globalThis.clearTimeout(timer);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, items, quoteSignature, billingPeriod]);
 
   useEffect(() => {
@@ -210,6 +211,8 @@ export function CartSheet({ trigger, walletName, onCheckoutComplete }: CartSheet
           const purchaseGuard = canPurchasePlan(
             Array.isArray(subscriptions) ? subscriptions : [],
             Array.isArray(plans) ? plans : [],
+            t,
+            intlTag,
           );
           if (!purchaseGuard.allowed) {
             setPurchaseBlockMessage(purchaseGuard.reason ?? null);
@@ -225,7 +228,7 @@ export function CartSheet({ trigger, walletName, onCheckoutComplete }: CartSheet
           );
           if (blockedItem?.plan.code) {
             setPurchaseBlockMessage(
-              buildPendingPaymentMessage(blockedItem.plan.code),
+              buildPendingPaymentMessage(blockedItem.plan.code, t),
             );
             return;
           }
@@ -248,6 +251,7 @@ export function CartSheet({ trigger, walletName, onCheckoutComplete }: CartSheet
       cancelled = true;
       globalThis.clearTimeout(timer);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, items, quoteSignature]);
 
   useEffect(() => {
@@ -276,20 +280,20 @@ export function CartSheet({ trigger, walletName, onCheckoutComplete }: CartSheet
     try {
       const context = await getSessionContext();
       if (!context.organizationId) {
-        throw new Error("Organisation non sélectionnée");
+        throw new Error(t.cart.orgNotSelected);
       }
       if (!context.walletId) {
-        throw new Error("Aucun wallet disponible. Créez-en un d'abord.");
+        throw new Error(t.cart.noWallet);
       }
       if (!quoteTotal) {
-        throw new Error("Devis indisponible. Réessayez dans un instant.");
+        throw new Error(t.cart.quoteUnavailable);
       }
 
       const canOperate = await bffGet<boolean>(
         `/api/payments/wallets/${context.walletId}/can-operate?amount=${quoteTotal}`,
       );
       if (!canOperate) {
-        toast.error("Solde insuffisant. Rechargez votre wallet.");
+        toast.error(t.cart.insufficientBalance);
         return;
       }
 
@@ -302,27 +306,23 @@ export function CartSheet({ trigger, walletName, onCheckoutComplete }: CartSheet
           });
         } catch (error) {
           failures.push(
-            getPlanLabel(item.plan) ??
-              (error instanceof Error ? error.message : "Erreur inconnue"),
+            getPlanLabel(item.plan, t) ??
+              (error instanceof Error ? error.message : t.cart.unknownError),
           );
         }
       }
 
       if (failures.length > 0) {
-        toast.error(
-          `Échec partiel : ${failures.join(", ")}. Les autres plans ont été traités.`,
-        );
+        toast.error(t.cart.partialFailure(failures.join(", ")));
       } else {
-        toast.success("Paiement effectué via wallet");
+        toast.success(t.cart.walletPaymentSuccess);
       }
 
       clearCart();
       setOpen(false);
       onCheckoutComplete?.();
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Paiement wallet impossible",
-      );
+      toast.error(error instanceof Error ? error.message : t.cart.walletPaymentError);
     } finally {
       setCheckingOut(null);
     }
@@ -332,14 +332,14 @@ export function CartSheet({ trigger, walletName, onCheckoutComplete }: CartSheet
     if (items.length === 0) return;
     if (!assertCheckoutAllowed()) return;
     if (items.length > 1) {
-      toast.error("MYCOOLPAY accepte un seul plan commercial par paiement.");
+      toast.error(t.cart.mycoolpaySingleLimit);
       return;
     }
 
     const cartItem = items[0];
     const planCode = cartItem?.plan.code;
     if (!planCode) {
-      toast.error("Plan invalide dans le panier");
+      toast.error(t.cart.invalidPlanInCart);
       return;
     }
 
@@ -347,7 +347,7 @@ export function CartSheet({ trigger, walletName, onCheckoutComplete }: CartSheet
     try {
       const context = await getSessionContext();
       if (!context.organizationId) {
-        throw new Error("Organisation non sélectionnée");
+        throw new Error(t.cart.orgNotSelected);
       }
 
       const checkout = await bffPost<CommercialPlanCheckoutResponse>(
@@ -375,10 +375,10 @@ export function CartSheet({ trigger, walletName, onCheckoutComplete }: CartSheet
         return;
       }
 
-      toast.error("URL de redirection MYCOOLPAY indisponible");
+      toast.error(t.cart.mycoolpayRedirectMissing);
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Paiement MYCOOLPAY impossible",
+        error instanceof Error ? error.message : t.cart.mycoolpayPaymentError,
       );
     } finally {
       setCheckingOut(null);
@@ -390,13 +390,13 @@ export function CartSheet({ trigger, walletName, onCheckoutComplete }: CartSheet
       <SheetTrigger asChild>{trigger}</SheetTrigger>
       <SheetContent side={isMobile ? "bottom" : "right"}>
         <SheetHeader>
-          <SheetTitle>Panier</SheetTitle>
+          <SheetTitle>{t.cart.title}</SheetTitle>
           <SheetDescription>
-            {items.length} article(s)
+            {t.cart.itemCount(items.length)}
             {quoteLoading
-              ? " - calcul du devis…"
+              ? t.cart.calculatingQuote
               : quote
-                ? ` - total ${quoteTotal.toLocaleString("fr-FR")} ${quoteCurrency}`
+                ? t.cart.totalSuffix(quoteTotal.toLocaleString(intlTag), quoteCurrency)
                 : ""}
           </SheetDescription>
         </SheetHeader>
@@ -404,7 +404,7 @@ export function CartSheet({ trigger, walletName, onCheckoutComplete }: CartSheet
         <div className="yypay:flex-1 yypay:overflow-y-auto yypay:px-6 yypay:py-4">
           {items.length === 0 ? (
             <p className="yypay:text-sm yypay:text-secondary">
-              Votre panier est vide. Ajoutez des plans depuis la console.
+              {t.cart.empty}
             </p>
           ) : (
             <>
@@ -423,7 +423,7 @@ export function CartSheet({ trigger, walletName, onCheckoutComplete }: CartSheet
                     className="yypay:flex-1"
                     onClick={() => setBillingPeriod(period)}
                   >
-                    {formatBillingPeriodLabel(period)}
+                    {formatBillingPeriodLabel(period, t)}
                   </Button>
                 ))}
               </div>
@@ -434,13 +434,13 @@ export function CartSheet({ trigger, walletName, onCheckoutComplete }: CartSheet
 
                   return (
                     <li
-                      key={planCode || getPlanLabel(item.plan)}
+                      key={planCode || getPlanLabel(item.plan, t)}
                       className="yypay:rounded-lg yypay:border yypay:border-border yypay:p-4"
                     >
                       <div className="yypay:flex yypay:items-start yypay:justify-between yypay:gap-3">
                         <div className="yypay:min-w-0">
                           <p className="yypay:font-medium yypay:text-foreground">
-                            {getPlanLabel(item.plan)}
+                            {getPlanLabel(item.plan, t)}
                           </p>
                           <p className="yypay:text-sm yypay:text-secondary">
                             {planCode}
@@ -450,7 +450,7 @@ export function CartSheet({ trigger, walletName, onCheckoutComplete }: CartSheet
                           variant="ghost"
                           size="icon"
                           onClick={() => planCode && removePlan(planCode)}
-                          aria-label="Retirer du panier"
+                          aria-label={t.cart.removeFromCart}
                         >
                           <Trash2 className="yypay:h-4 yypay:w-4" />
                         </Button>
@@ -459,7 +459,7 @@ export function CartSheet({ trigger, walletName, onCheckoutComplete }: CartSheet
                       {compatibleAddOns.length > 0 && (
                         <div className="yypay:mt-4 yypay:space-y-2">
                           <p className="yypay:text-xs yypay:font-medium yypay:uppercase yypay:tracking-wide yypay:text-secondary">
-                            Add-ons
+                            {t.cart.addOns}
                           </p>
                           <div className="yypay:flex yypay:flex-wrap yypay:gap-2">
                             {compatibleAddOns.map((addOnCode) => {
@@ -493,7 +493,7 @@ export function CartSheet({ trigger, walletName, onCheckoutComplete }: CartSheet
                   )}
                 >
                   <p className="yypay:mb-2 yypay:font-medium yypay:text-foreground">
-                    Détail du devis
+                    {t.cart.quoteDetails}
                   </p>
                   <ul className="yypay:space-y-1">
                     {quote.lines.map((line, index) => (
@@ -503,7 +503,7 @@ export function CartSheet({ trigger, walletName, onCheckoutComplete }: CartSheet
                       >
                         <span>{line.serviceCode}</span>
                         <span>
-                          {line.amount?.toLocaleString("fr-FR")} {line.currency}
+                          {line.amount?.toLocaleString(intlTag)} {line.currency}
                         </span>
                       </li>
                     ))}
@@ -535,7 +535,7 @@ export function CartSheet({ trigger, walletName, onCheckoutComplete }: CartSheet
                   ) : (
                     <Wallet className="yypay:h-4 yypay:w-4" />
                   )}
-                  Payer via wallet
+                  {t.cart.payViaWallet}
                 </Button>
                 <Button
                   variant="outline"
@@ -555,12 +555,11 @@ export function CartSheet({ trigger, walletName, onCheckoutComplete }: CartSheet
                   ) : (
                     <CreditCard className="yypay:h-4 yypay:w-4" />
                   )}
-                  Payer via {mycoolpayLabel}
+                  {t.cart.payVia(mycoolpayLabel)}
                 </Button>
                 {items.length > 1 && (
                   <p className="yypay:pt-1 yypay:text-center yypay:text-xs yypay:text-secondary">
-                    MYCOOLPAY : un seul plan à la fois. Utilisez le wallet pour
-                    plusieurs plans.
+                    {t.cart.mycoolpaySingleWarning}
                   </p>
                 )}
               </div>

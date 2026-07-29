@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useLocale } from "@/i18n/locale-provider";
 import { formatBillingPeriodLabel, type BillingPeriod } from "@/lib/commercial-plan-display";
 import { cn } from "@/lib/utils";
 import type { components } from "@/types/schemas-payment";
@@ -29,6 +30,7 @@ export function PlanAutoRenewalToggle({
   onDisable,
   className,
 }: PlanAutoRenewalToggleProps) {
+  const { t } = useLocale();
   const isActive = autoRenewal?.active === true;
   const renewalPeriod = autoRenewal?.billingPeriod as BillingPeriod | undefined;
 
@@ -41,7 +43,7 @@ export function PlanAutoRenewalToggle({
         )}
       >
         <Loader2 className="yypay:h-4 yypay:w-4 yypay:animate-spin" />
-        Chargement du renouvellement automatique…
+        {t.plans.autoRenewal.loading}
       </div>
     );
   }
@@ -56,12 +58,16 @@ export function PlanAutoRenewalToggle({
       <div className="yypay:flex yypay:items-start yypay:justify-between yypay:gap-3">
         <div className="yypay:min-w-0">
           <p className="yypay:text-sm yypay:font-medium yypay:text-foreground">
-            Renouvellement automatique
+            {t.plans.autoRenewal.title}
           </p>
           <p className="yypay:mt-1 yypay:text-xs yypay:text-muted-foreground">
             {isActive
-              ? `Activé (${formatBillingPeriodLabel(renewalPeriod ?? billingPeriod).toLowerCase()}). Le plan sera renouvelé avant expiration.`
-              : `Renouveler automatiquement en facturation ${formatBillingPeriodLabel(billingPeriod).toLowerCase()}.`}
+              ? t.plans.autoRenewal.activeDescription(
+                  formatBillingPeriodLabel(renewalPeriod ?? billingPeriod, t).toLowerCase(),
+                )
+              : t.plans.autoRenewal.inactiveDescription(
+                  formatBillingPeriodLabel(billingPeriod, t).toLowerCase(),
+                )}
           </p>
         </div>
         <RefreshCw
@@ -90,11 +96,11 @@ export function PlanAutoRenewalToggle({
         {mutating ? (
           <Loader2 className="yypay:h-4 yypay:w-4 yypay:animate-spin" />
         ) : null}
-        {isActive ? "Désactiver le renouvellement auto" : "Activer le renouvellement auto"}
+        {isActive ? t.plans.autoRenewal.disable : t.plans.autoRenewal.enable}
       </Button>
 
       <p className="yypay:mt-2 yypay:text-[11px] yypay:text-muted-foreground">
-        Plan {planCode} - préférence enregistrée côté Kernel.
+        {t.plans.autoRenewal.footer(planCode)}
       </p>
     </div>
   );

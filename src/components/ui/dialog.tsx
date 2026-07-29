@@ -1,3 +1,6 @@
+"use client";
+
+import { useLocale } from "@/i18n/locale-provider";
 import { cn } from "@/lib/utils";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
@@ -47,6 +50,7 @@ function DialogContent({
   children,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content>) {
+  const { t } = useLocale();
   return (
     <DialogPortal>
       <DialogOverlay />
@@ -60,7 +64,7 @@ function DialogContent({
         {children}
         <DialogPrimitive.Close className="yypay:absolute yypay:right-4 yypay:top-4 yypay:rounded-sm yypay:text-secondary hover:yypay:text-foreground">
           <X className="yypay:h-4 yypay:w-4" />
-          <span className="yypay:sr-only">Fermer</span>
+          <span className="yypay:sr-only">{t.common.close}</span>
         </DialogPrimitive.Close>
       </DialogPrimitive.Content>
     </DialogPortal>

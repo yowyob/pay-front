@@ -3,6 +3,7 @@
 import { BillingPeriodToggle } from "@/components/plans/billing-period-toggle";
 import { PlanPricingCard } from "@/components/plans/plan-pricing-card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLocale } from "@/i18n/locale-provider";
 import {
     getPopularPlanCode,
     type BillingPeriod,
@@ -61,6 +62,7 @@ export function PlansPricingSection({
   className,
   id,
 }: PlansPricingSectionProps) {
+  const { t } = useLocale();
   const popularPlanCode = getPopularPlanCode(plans);
   const purchaseBlocked = Boolean(activeSubscription && purchaseBlockMessage);
 
@@ -68,11 +70,10 @@ export function PlansPricingSection({
     <section id={id} className={cn("yypay:w-full", className)}>
       <div className="yypay:mx-auto yypay:max-w-3xl yypay:text-center">
         <h2 className="yypay:text-2xl yypay:font-bold yypay:tracking-tight yypay:text-foreground sm:yypay:text-4xl">
-          Choisissez le meilleur plan pour vous
+          {t.plans.section.title}
         </h2>
         <p className="yypay:mt-3 yypay:text-base yypay:text-muted-foreground sm:yypay:text-lg">
-          Vous pouvez changer de plan à tout moment. Les tarifs sont recalculés
-          côté serveur avant chaque paiement.
+          {t.plans.section.description}
         </p>
 
         {purchaseBlocked && purchaseBlockMessage && (
@@ -99,7 +100,7 @@ export function PlansPricingSection({
         </div>
       ) : plans.length === 0 ? (
         <p className="yypay:mt-10 yypay:text-center yypay:text-muted-foreground">
-          Aucun plan disponible pour le moment.
+          {t.plans.section.empty}
         </p>
       ) : (
         <div className="yypay:mx-auto yypay:mt-10 yypay:grid yypay:max-w-7xl yypay:grid-cols-1 yypay:items-stretch yypay:gap-6 sm:yypay:mt-12 md:yypay:grid-cols-2 xl:yypay:grid-cols-3 2xl:yypay:grid-cols-4">
@@ -135,7 +136,7 @@ export function PlansPricingSection({
                 isPendingPayment={planCode ? pendingPlanCodes.has(planCode) : false}
                 purchaseBlocked={purchaseBlocked}
                 blockMessage={purchaseBlockMessage}
-                ctaLabel={getCtaLabel?.(plan) ?? "Sélectionner"}
+                ctaLabel={getCtaLabel?.(plan) ?? t.plans.section.selectCta}
                 onSelect={onSelectPlan ? () => onSelectPlan(plan) : undefined}
                 disabled={!onSelectPlan}
               />
