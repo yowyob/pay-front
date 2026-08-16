@@ -19,7 +19,11 @@ import {
     getDirectPaymentFailureCallbackUrl,
     getDirectPaymentSuccessCallbackUrl,
 } from "@/lib/payment-callback";
-import { getSessionFromRequest } from "@/lib/session-cookies";
+import {
+    ensureOrgWallet,
+    rechargeWallet,
+    refreshRecharge,
+} from "@/lib/wallet-kernel";
 import type { components } from "@/types/schemas-payment";
 
 type CommercialPlanCheckoutRequest =
@@ -32,7 +36,6 @@ type CommercialPlanCheckoutResponse =
 type ServiceBundleCheckoutResponse =
   components["schemas"]["ServiceBundleCheckoutResponse"];
 type PaymentOrderResponse = components["schemas"]["PaymentOrderResponse"];
-type WalletResponse = components["schemas"]["WalletResponse"];
 
 type ApiEnvelope<T> = {
   success?: boolean;
@@ -168,6 +171,47 @@ export async function initiateDirectPaymentCheckout(
     };
   }
 
+  // Recharge d'un wallet d'organisation : on passe par le flux recharge du kernel (crédit
+  // server-authoritative à la confirmation), JAMAIS par un crédit direct depuis le front.
+  if (context.params.mode === "of_org") {
+    const wallet = await ensureOrgWallet(
+      request,
+      context.params.orgId,
+      context.article.label,
+    );
+    if (!wallet.ok || !wallet.data?.id) {
+      throw new Error(wallet.message ?? "Wallet organisation indisponible");
+    }
+    const recharge = await rechargeWallet(request, wallet.data.id, {
+      amount: context.totalAmount,
+      currency: context.currency,
+      payerReference,
+      idempotencyKey,
+    });
+    if (!recharge.ok || !recharge.data?.orderId) {
+      throw new Error(recharge.message ?? "Échec de l'initiation de la recharge");
+    }
+    return {
+      orderId: recharge.data.orderId,
+      orderType: "wallet_recharge",
+      paymentOrderId: recharge.data.paymentOrderId,
+      walletId: wallet.data.id,
+      redirectUrl: recharge.data.redirectUrl,
+      mode: context.params.mode,
+      orgId: context.params.orgId,
+      articleId: context.params.articleId,
+      userId: context.params.userId,
+      reference: context.params.reference,
+      returnUrl: context.params.returnUrl,
+      quantity: context.params.qte,
+      amount: context.totalAmount,
+      currency: context.currency,
+      label: context.article.label,
+      successWebhookUrl: context.article.successWebhookUrl,
+      failureWebhookUrl: context.article.failureWebhookUrl,
+    };
+  }
+
   const serviceCode =
     context.article.serviceCode?.trim() ||
     context.article.planCode?.trim() ||
@@ -241,6 +285,15 @@ async function refreshDirectPaymentOrder(
     return { status: data?.status, paymentOrderId: data?.paymentOrderId };
   }
 
+  if (orderType === "wallet_recharge") {
+    // Confirme la recharge : le kernel crédite le wallet (idempotent) si le paiement a réussi.
+    const refreshed = await refreshRecharge(request, orderId);
+    return {
+      status: refreshed.data?.status,
+      paymentOrderId: refreshed.data?.paymentOrderId,
+    };
+  }
+
   const result = await client.POST("/api/payments/orders/{id}/refresh", {
     params: { path: { id: orderId } },
   });
@@ -248,77 +301,6 @@ async function refreshDirectPaymentOrder(
   return { status: data?.status, paymentOrderId: data?.id };
 }
 
-async function ensureOrganizationWallet(
-  request: Request,
-  organizationId: string,
-  ownerName: string,
-): Promise<WalletResponse> {
-  const client = createIwmPaymentClient(request);
-  const existing = await client.GET("/api/payments/wallets/owner/{ownerId}", {
-    params: { path: { ownerId: organizationId } },
-  });
-  const existingWallet = unwrapApiData<WalletResponse>(
-    existing.data ?? existing.error,
-  );
-  if (existing.response.ok && existingWallet?.id) {
-    return existingWallet;
-  }
-
-  const created = await client.POST("/api/payments/wallets", {
-    body: { ownerId: organizationId, ownerName },
-  });
-  const wallet = unwrapApiData<WalletResponse>(created.data ?? created.error);
-  if (!created.response.ok || !wallet?.id) {
-    throw new Error("Impossible de créer le wallet organisation");
-  }
-  return wallet;
-}
-
-async function creditOrganizationWallet(
-  request: Request,
-  walletId: string,
-  amount: number,
-  reference: string,
-): Promise<{ credited: boolean; message?: string }> {
-  const { baseUrl, clientId, apiKey } = getIwmEnv();
-  const session = getSessionFromRequest(request);
-
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    "X-Client-Id": clientId,
-    "X-Api-Key": apiKey,
-  };
-
-  if (session.tenantId) {
-    headers["X-Tenant-Id"] = session.tenantId;
-  }
-
-  if (session.authorization) {
-    headers.Authorization = session.authorization;
-  }
-
-  const response = await fetch(
-    `${baseUrl}/api/payments/wallets/${encodeURIComponent(walletId)}/credit`,
-    {
-      method: "POST",
-      headers: {
-        ...headers,
-      },
-      body: JSON.stringify({ amount, reference }),
-      signal: AbortSignal.timeout(10_000),
-    },
-  );
-
-  if (response.ok) {
-    return { credited: true };
-  }
-
-  return {
-    credited: false,
-    message:
-      "Crédit wallet organisation indisponible côté Kernel — notification webhook uniquement",
-  };
-}
 
 export type DirectPaymentFinalizeResult = {
   status: string;
@@ -352,24 +334,12 @@ export async function finalizeDirectPayment(
 
   const success = isPaymentSuccessStatus(status);
 
-  let orgWalletCredited: boolean | undefined;
-  let orgWalletMessage: string | undefined;
-
-  if (success && session.mode === "of_org") {
-    const wallet = await ensureOrganizationWallet(
-      request,
-      session.orgId,
-      session.label,
-    );
-    const creditResult = await creditOrganizationWallet(
-      request,
-      wallet.id!,
-      session.amount,
-      session.reference ?? session.orderId,
-    );
-    orgWalletCredited = creditResult.credited;
-    orgWalletMessage = creditResult.message;
-  }
+  // Le crédit du wallet est fait par le KERNEL à la confirmation de la recharge (idempotent),
+  // jamais depuis le front. Pour un top-up d'organisation (mode of_org), un statut de succès
+  // signifie donc que le kernel a bien crédité le wallet.
+  const orgWalletCredited: boolean | undefined =
+    session.mode === "of_org" ? success : undefined;
+  const orgWalletMessage: string | undefined = undefined;
 
   const webhookPayload: OrgWebhookPayload = {
     event: success ? "payment.success" : "payment.failure",

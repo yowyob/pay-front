@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import {
   Building2,
   LayoutDashboard,
+  Wallet,
   Receipt,
   Server,
   Tag,
@@ -23,6 +24,7 @@ export function ConsoleSidebar({ onNavigate, className }: ConsoleSidebarProps) {
 
   const sections = [
     { href: "/console", label: t.sidebar.overview, icon: LayoutDashboard },
+    { href: "/console/wallet", label: "Wallet", icon: Wallet },
     { href: "/console/transactions", label: t.sidebar.transactions, icon: Receipt },
     { href: "/console/plans", label: t.sidebar.plans, icon: Tag },
   ];

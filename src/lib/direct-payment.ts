@@ -1,6 +1,6 @@
 export type DirectPaymentMode = "for_org" | "of_org";
 
-export type DirectPaymentCheckoutType = "plan" | "bundle" | "payment";
+export type DirectPaymentCheckoutType = "plan" | "bundle" | "payment" | "wallet_recharge";
 
 export type DirectPaymentQueryParams = {
   userId: string;
@@ -43,6 +43,7 @@ export type DirectPaymentSession = {
   orderId: string;
   orderType: DirectPaymentCheckoutType;
   paymentOrderId?: string;
+  walletId?: string;
   mode: DirectPaymentMode;
   orgId: string;
   articleId: string;
