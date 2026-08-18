@@ -155,6 +155,15 @@ export function formatActivityStatusLabel(
   return key ? t.transactionList.statusLabels[key] : status ?? t.transactionList.statusLabels.unknown;
 }
 
+/** "SERVICE_COMPTABLE" -> "Service comptable" : un code technique reste illisible tel quel. */
+function humanizeCode(code: string): string {
+  const cleaned = code.replace(/[_-]+/g, " ").trim().toLowerCase();
+  if (!cleaned) {
+    return code;
+  }
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+}
+
 export function formatActivityType(item: PaymentActivityItem, t: Messages): string {
   switch (item.source) {
     case "wallet":
@@ -162,10 +171,10 @@ export function formatActivityType(item: PaymentActivityItem, t: Messages): stri
     case "recharge_order":
       return t.transactionList.types.rechargeWallet;
     case "payment_order":
-      return t.transactionList.types.payment(item.type);
+      return t.transactionList.types.payment(humanizeCode(item.type));
     case "plan_order":
       return t.transactionList.types.plan(
-        item.type.startsWith("PLAN_") ? item.type.slice(5) : item.type,
+        humanizeCode(item.type.startsWith("PLAN_") ? item.type.slice(5) : item.type),
       );
     case "bundle_order":
       return t.transactionList.types.bundleServices;
@@ -174,6 +183,34 @@ export function formatActivityType(item: PaymentActivityItem, t: Messages): stri
       return exhaustive;
     }
   }
+}
+
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isTechnicalIdentifier(value: string): boolean {
+  return UUID_PATTERN.test(value.trim());
+}
+
+/**
+ * Détail lisible d'une opération.
+ *
+ * Un UUID ne veut rien dire pour l'utilisateur, mais il lui faut de quoi désigner une
+ * opération auprès du support : on n'affiche donc jamais l'identifiant complet, seulement
+ * un préfixe court et stable.
+ */
+export function formatActivityDetail(item: PaymentActivityItem): string {
+  const detail = item.detail?.trim();
+  if (detail && !isTechnicalIdentifier(detail)) {
+    return detail;
+  }
+  const reference = item.reference?.trim();
+  if (!reference) {
+    return "-";
+  }
+  return isTechnicalIdentifier(reference)
+    ? `Réf. ${reference.slice(0, 8).toUpperCase()}`
+    : reference;
 }
 
 export function formatActivityAmount(
@@ -234,9 +271,10 @@ export function fromWalletRechargeOrder(
     amount: order.amount,
     currency: order.currency,
     reference: order.providerReference ?? order.paymentOrderId,
+    // Jamais l'identifiant technique de la transaction : il ne dit rien à l'utilisateur.
     detail: order.transactionId
-      ? `Transaction wallet ${order.transactionId}`
-      : "Paiement provider",
+      ? "Rechargement crédité sur votre portefeuille"
+      : "Paiement par mobile money",
     createdAt: order.createdAt ?? order.updatedAt,
   };
 }

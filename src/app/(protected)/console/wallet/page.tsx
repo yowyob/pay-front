@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useConsoleData } from "@/components/console/console-data-provider";
+import { MoneyTransferCard } from "@/components/console/money-transfer-card";
+import { MoneyWithdrawalCard } from "@/components/console/money-withdrawal-card";
 import { TransactionList } from "@/components/console/transaction-list";
 import { bffPost } from "@/lib/bff-client";
 import { Button } from "@/components/ui/button";
@@ -18,7 +20,7 @@ type RechargeResponse = {
 };
 
 export default function WalletPage() {
-  const { wallet, walletLoading } = useConsoleData();
+  const { wallet, walletLoading, refreshWallet } = useConsoleData();
   const [amount, setAmount] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -115,6 +117,11 @@ export default function WalletPage() {
           </Button>
         </div>
       </Card>
+
+      <div className="yypay:mb-8 yypay:grid yypay:grid-cols-1 yypay:gap-6 lg:yypay:grid-cols-2">
+        <MoneyTransferCard walletId={wallet?.id} onDone={refreshWallet} />
+        <MoneyWithdrawalCard walletId={wallet?.id} onDone={refreshWallet} />
+      </div>
 
       <div className="yypay:mb-4">
         <h2 className="yypay:text-lg yypay:font-semibold yypay:text-foreground">Historique</h2>

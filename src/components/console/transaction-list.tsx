@@ -20,6 +20,7 @@ import { useLocale } from "@/i18n/locale-provider";
 import { bffGet } from "@/lib/bff-client";
 import {
     formatActivityAmount,
+    formatActivityDetail,
     formatActivityStatusLabel,
     formatActivityType,
     getActivityDirection,
@@ -472,7 +473,7 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
                             </Badge>
                           </td>
                           <td className="yypay:py-3 yypay:max-w-xs yypay:truncate yypay:text-secondary">
-                            {item.detail ?? item.reference ?? "-"}
+                            {formatActivityDetail(item)}
                           </td>
                         </tr>
                       );
@@ -519,7 +520,7 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
                         {date} - {time}
                       </p>
                       <p className="yypay:mt-1 yypay:truncate yypay:text-xs yypay:text-secondary">
-                        {item.detail ?? item.reference ?? "-"}
+                        {formatActivityDetail(item)}
                       </p>
                     </div>
                   );
