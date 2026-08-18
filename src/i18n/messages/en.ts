@@ -127,6 +127,26 @@ const en: Messages = {
       success: "Successful",
       pending: "Pending",
       failed: "Failed",
+      inbound: "Money in",
+      outbound: "Money out",
+      net: "Net balance",
+    },
+    directionTabs: {
+      all: "All",
+      in: "Money in",
+      out: "Money out",
+    },
+    chartTitle: "Cash-flow trend",
+    chartDescription:
+      "Successful money in and money out, aggregated per day, over the filtered operations.",
+    chartEmpty: "Not enough successful operations yet to draw a trend line.",
+    pagination: {
+      previous: "Previous",
+      next: "Next",
+      page: (current: number, total: number) => `Page ${current} of ${total}`,
+      range: (from: number, to: number, total: number) =>
+        `${from}-${to} of ${total}`,
+      perPage: "Per page",
     },
     historyTitle: (wallet: string) => `History - ${wallet}`,
     summary: (shown: number, total: number) =>
@@ -141,6 +161,7 @@ const en: Messages = {
       amount: "Amount",
       status: "Status",
       detail: "Detail",
+      direction: "Direction",
     },
   },
   plans: {

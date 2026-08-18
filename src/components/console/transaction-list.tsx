@@ -22,14 +22,22 @@ import {
     formatActivityAmount,
     formatActivityStatusLabel,
     formatActivityType,
+    getActivityDirection,
+    getActivitySignedAmount,
     getActivityStatusGroup,
     getActivityStatusVariant,
+    type ActivityDirection,
     type ActivityStatusGroup,
     type PaymentActivityItem,
     type PaymentActivitySource,
 } from "@/lib/payment-activity";
+import { ActivityFlowChart } from "@/components/console/activity-flow-chart";
 import {
+    ArrowDownLeft,
     ArrowDownToLine,
+    ArrowUpRight,
+    ChevronLeft,
+    ChevronRight,
     CreditCard,
     Package,
     Search,
@@ -46,6 +54,9 @@ type TransactionListProps = {
 };
 
 type StatusFilter = "all" | ActivityStatusGroup;
+type DirectionFilter = "all" | ActivityDirection;
+
+const PAGE_SIZE_OPTIONS = [10, 25, 50] as const;
 
 const SOURCE_ICONS: Record<PaymentActivitySource, LucideIcon> = {
   wallet: Wallet,
@@ -82,7 +93,10 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
   const [activity, setActivity] = useState<PaymentActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [directionFilter, setDirectionFilter] = useState<DirectionFilter>("all");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<number>(PAGE_SIZE_OPTIONS[0]);
 
   useEffect(() => {
     async function load() {
@@ -115,6 +129,27 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
     return counts;
   }, [activity]);
 
+  /** Totaux monetaires : seules les operations reussies sont comptees. */
+  const totals = useMemo(() => {
+    let inbound = 0;
+    let outbound = 0;
+    let currency: string | undefined;
+    for (const item of activity) {
+      const signed = getActivitySignedAmount(item);
+      if (signed === 0) continue;
+      currency = currency ?? item.currency;
+      if (signed > 0) {
+        inbound += signed;
+      } else {
+        outbound += -signed;
+      }
+    }
+    return { inbound, outbound, net: inbound - outbound, currency };
+  }, [activity]);
+
+  const formatTotal = (value: number) =>
+    `${Math.round(value).toLocaleString(intlTag)}${totals.currency ? ` ${totals.currency}` : ""}`;
+
   const normalizedSearch = search.trim().toLowerCase();
 
   const filteredActivity = useMemo(() => {
@@ -122,6 +157,12 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
       if (
         statusFilter !== "all" &&
         getActivityStatusGroup(item.status) !== statusFilter
+      ) {
+        return false;
+      }
+      if (
+        directionFilter !== "all" &&
+        getActivityDirection(item) !== directionFilter
       ) {
         return false;
       }
@@ -138,10 +179,29 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
       return haystack.includes(normalizedSearch);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activity, statusFilter, normalizedSearch, locale]);
+  }, [activity, statusFilter, directionFilter, normalizedSearch, locale]);
+
+  // Tout changement de filtre ramene a la premiere page.
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter, directionFilter, normalizedSearch, pageSize]);
+
+  const pageCount = Math.max(1, Math.ceil(filteredActivity.length / pageSize));
+  const currentPage = Math.min(page, pageCount);
+  const pageStart = (currentPage - 1) * pageSize;
+  const pagedActivity = filteredActivity.slice(pageStart, pageStart + pageSize);
 
   const walletLabel = walletName?.trim() || t.wallet.defaultName;
-  const hasFiltersApplied = statusFilter !== "all" || normalizedSearch.length > 0;
+  const hasFiltersApplied =
+    statusFilter !== "all" ||
+    directionFilter !== "all" ||
+    normalizedSearch.length > 0;
+
+  const directionTabs: { value: DirectionFilter; label: string }[] = [
+    { value: "all", label: t.transactionList.directionTabs.all },
+    { value: "in", label: t.transactionList.directionTabs.in },
+    { value: "out", label: t.transactionList.directionTabs.out },
+  ];
 
   const statusTabs: { value: StatusFilter; label: string }[] = [
     { value: "all", label: t.transactionList.statusTabs.all },
@@ -152,6 +212,7 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
 
   function resetFilters() {
     setStatusFilter("all");
+    setDirectionFilter("all");
     setSearch("");
   }
 
@@ -177,6 +238,61 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
 
   return (
     <div className="yypay:space-y-6">
+      <div className="yypay:grid yypay:grid-cols-1 yypay:gap-3 sm:yypay:grid-cols-3">
+        <Card>
+          <CardContent className="yypay:p-4">
+            <p className="yypay:flex yypay:items-center yypay:gap-1.5 yypay:text-xs yypay:font-medium yypay:text-muted-foreground">
+              <ArrowDownLeft className="yypay:h-3.5 yypay:w-3.5" />
+              {t.transactionList.stats.inbound}
+            </p>
+            <p className="yypay:mt-1 yypay:text-2xl yypay:font-bold yypay:text-emerald-600 dark:yypay:text-emerald-400">
+              +{formatTotal(totals.inbound)}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="yypay:p-4">
+            <p className="yypay:flex yypay:items-center yypay:gap-1.5 yypay:text-xs yypay:font-medium yypay:text-muted-foreground">
+              <ArrowUpRight className="yypay:h-3.5 yypay:w-3.5" />
+              {t.transactionList.stats.outbound}
+            </p>
+            <p className="yypay:mt-1 yypay:text-2xl yypay:font-bold yypay:text-rose-600 dark:yypay:text-rose-400">
+              -{formatTotal(totals.outbound)}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="yypay:p-4">
+            <p className="yypay:text-xs yypay:font-medium yypay:text-muted-foreground">
+              {t.transactionList.stats.net}
+            </p>
+            <p className="yypay:mt-1 yypay:text-2xl yypay:font-bold yypay:text-foreground">
+              {totals.net >= 0 ? "+" : "-"}
+              {formatTotal(Math.abs(totals.net))}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t.transactionList.chartTitle}</CardTitle>
+          <CardDescription>{t.transactionList.chartDescription}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ActivityFlowChart
+            items={filteredActivity}
+            intlTag={intlTag}
+            currency={totals.currency}
+            labels={{
+              inbound: t.transactionList.stats.inbound,
+              outbound: t.transactionList.stats.outbound,
+              empty: t.transactionList.chartEmpty,
+            }}
+          />
+        </CardContent>
+      </Card>
+
       <div className="yypay:grid yypay:grid-cols-2 yypay:gap-3 sm:yypay:grid-cols-4">
         <Card>
           <CardContent className="yypay:p-4">
@@ -244,6 +360,22 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
               </TabsList>
             </Tabs>
 
+            <Tabs
+              value={directionFilter}
+              onValueChange={(value) =>
+                setDirectionFilter(value as DirectionFilter)
+              }
+              className="yypay:gap-0"
+            >
+              <TabsList className="yypay:w-full sm:yypay:w-auto">
+                {directionTabs.map((tab) => (
+                  <TabsTrigger key={tab.value} value={tab.value}>
+                    {tab.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+
             <div className="yypay:relative sm:yypay:w-64">
               <Search className="yypay:pointer-events-none yypay:absolute yypay:left-3 yypay:top-1/2 yypay:h-4 yypay:w-4 yypay:-translate-y-1/2 yypay:text-muted-foreground" />
               <Input
@@ -283,15 +415,25 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
                     <tr className="yypay:border-b yypay:border-border yypay:text-secondary">
                       <th className="yypay:py-2 yypay:pr-4">{t.transactionList.table.type}</th>
                       <th className="yypay:py-2 yypay:pr-4">{t.transactionList.table.date}</th>
+                      <th className="yypay:py-2 yypay:pr-4">{t.transactionList.table.direction}</th>
                       <th className="yypay:py-2 yypay:pr-4">{t.transactionList.table.amount}</th>
                       <th className="yypay:py-2 yypay:pr-4">{t.transactionList.table.status}</th>
                       <th className="yypay:py-2">{t.transactionList.table.detail}</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredActivity.map((item) => {
+                    {pagedActivity.map((item) => {
                       const Icon = SOURCE_ICONS[item.source];
                       const { date, time } = formatActivityDate(item.createdAt, intlTag);
+                      const direction = getActivityDirection(item);
+                      const isInbound = direction === "in";
+                      const DirectionIcon = isInbound ? ArrowDownLeft : ArrowUpRight;
+                      const directionClass = isInbound
+                        ? "yypay:text-emerald-600 dark:yypay:text-emerald-400"
+                        : "yypay:text-rose-600 dark:yypay:text-rose-400";
+                      const directionLabel = isInbound
+                        ? t.transactionList.directionTabs.in
+                        : t.transactionList.directionTabs.out;
                       return (
                         <tr
                           key={item.id}
@@ -309,8 +451,20 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
                             <div>{date}</div>
                             <div className="yypay:text-xs yypay:text-secondary">{time}</div>
                           </td>
-                          <td className="yypay:py-3 yypay:pr-4 yypay:font-medium">
-                            {formatActivityAmount(item, intlTag)}
+                          <td className="yypay:py-3 yypay:pr-4">
+                            <span
+                              className={`yypay:inline-flex yypay:items-center yypay:gap-1 yypay:text-xs yypay:font-medium ${directionClass}`}
+                            >
+                              <DirectionIcon className="yypay:h-3.5 yypay:w-3.5" />
+                              {directionLabel}
+                            </span>
+                          </td>
+                          <td
+                            className={`yypay:py-3 yypay:pr-4 yypay:font-medium yypay:whitespace-nowrap ${directionClass}`}
+                          >
+                            {item.amount == null
+                              ? "-"
+                              : `${isInbound ? "+" : "-"}${formatActivityAmount(item, intlTag)}`}
                           </td>
                           <td className="yypay:py-3 yypay:pr-4">
                             <Badge variant={getActivityStatusVariant(item.status)}>
@@ -327,9 +481,14 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
                 </table>
               </div>
               <div className="yypay:space-y-3 md:yypay:hidden">
-                {filteredActivity.map((item) => {
+                {pagedActivity.map((item) => {
                   const Icon = SOURCE_ICONS[item.source];
                   const { date, time } = formatActivityDate(item.createdAt, intlTag);
+                  const isInbound = getActivityDirection(item) === "in";
+                  const DirectionIcon = isInbound ? ArrowDownLeft : ArrowUpRight;
+                  const directionClass = isInbound
+                    ? "yypay:text-emerald-600 dark:yypay:text-emerald-400"
+                    : "yypay:text-rose-600 dark:yypay:text-rose-400";
                   return (
                     <div
                       key={item.id}
@@ -348,8 +507,13 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
                           {formatActivityStatusLabel(item.status, t)}
                         </Badge>
                       </div>
-                      <p className="yypay:mt-3 yypay:text-lg yypay:font-bold">
-                        {formatActivityAmount(item, intlTag)}
+                      <p
+                        className={`yypay:mt-3 yypay:flex yypay:items-center yypay:gap-1 yypay:text-lg yypay:font-bold ${directionClass}`}
+                      >
+                        <DirectionIcon className="yypay:h-4 yypay:w-4" />
+                        {item.amount == null
+                          ? "-"
+                          : `${isInbound ? "+" : "-"}${formatActivityAmount(item, intlTag)}`}
                       </p>
                       <p className="yypay:mt-1 yypay:text-xs yypay:text-secondary">
                         {date} - {time}
@@ -360,6 +524,58 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
                     </div>
                   );
                 })}
+              </div>
+
+              <div className="yypay:mt-4 yypay:flex yypay:flex-col yypay:gap-3 yypay:border-t yypay:border-border yypay:pt-4 sm:yypay:flex-row sm:yypay:items-center sm:yypay:justify-between">
+                <div className="yypay:flex yypay:items-center yypay:gap-3 yypay:text-xs yypay:text-secondary">
+                  <span>
+                    {t.transactionList.pagination.range(
+                      pageStart + 1,
+                      pageStart + pagedActivity.length,
+                      filteredActivity.length,
+                    )}
+                  </span>
+                  <label className="yypay:flex yypay:items-center yypay:gap-1.5">
+                    <span>{t.transactionList.pagination.perPage}</span>
+                    <select
+                      value={pageSize}
+                      onChange={(event) => setPageSize(Number(event.target.value))}
+                      className="yypay:rounded-md yypay:border yypay:border-border yypay:bg-background yypay:px-2 yypay:py-1 yypay:text-xs yypay:text-foreground"
+                    >
+                      {PAGE_SIZE_OPTIONS.map((size) => (
+                        <option key={size} value={size}>
+                          {size}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <div className="yypay:flex yypay:items-center yypay:gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPage((current) => Math.max(1, current - 1))}
+                    disabled={currentPage <= 1}
+                    className="yypay:inline-flex yypay:items-center yypay:gap-1 yypay:rounded-md yypay:border yypay:border-border yypay:px-2.5 yypay:py-1.5 yypay:text-xs yypay:font-medium yypay:text-foreground disabled:yypay:opacity-40 hover:yypay:bg-muted/60"
+                  >
+                    <ChevronLeft className="yypay:h-3.5 yypay:w-3.5" />
+                    {t.transactionList.pagination.previous}
+                  </button>
+                  <span className="yypay:text-xs yypay:text-secondary">
+                    {t.transactionList.pagination.page(currentPage, pageCount)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPage((current) => Math.min(pageCount, current + 1))
+                    }
+                    disabled={currentPage >= pageCount}
+                    className="yypay:inline-flex yypay:items-center yypay:gap-1 yypay:rounded-md yypay:border yypay:border-border yypay:px-2.5 yypay:py-1.5 yypay:text-xs yypay:font-medium yypay:text-foreground disabled:yypay:opacity-40 hover:yypay:bg-muted/60"
+                  >
+                    {t.transactionList.pagination.next}
+                    <ChevronRight className="yypay:h-3.5 yypay:w-3.5" />
+                  </button>
+                </div>
               </div>
             </>
           )}

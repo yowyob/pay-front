@@ -1,5 +1,6 @@
 "use client";
 
+import { useConsoleData } from "@/components/console/console-data-provider";
 import { useLocale } from "@/i18n/locale-provider";
 import { cn } from "@/lib/utils";
 import {
@@ -21,6 +22,7 @@ type ConsoleSidebarProps = {
 export function ConsoleSidebar({ onNavigate, className }: ConsoleSidebarProps) {
   const pathname = usePathname();
   const { t } = useLocale();
+  const { sessionContext } = useConsoleData();
 
   const sections = [
     { href: "/console", label: t.sidebar.overview, icon: LayoutDashboard },
@@ -29,8 +31,18 @@ export function ConsoleSidebar({ onNavigate, className }: ConsoleSidebarProps) {
     { href: "/console/plans", label: t.sidebar.plans, icon: Tag },
   ];
 
+  // Un compte sans organisation (wallet personnel) n'a rien a changer :
+  // l'entree renverrait vers une page vide, on la masque.
   const account = [
-    { href: "/organizations", label: t.sidebar.switchOrganization, icon: Building2 },
+    ...(sessionContext && !sessionContext.organizationId
+      ? []
+      : [
+          {
+            href: "/organizations",
+            label: t.sidebar.switchOrganization,
+            icon: Building2,
+          },
+        ]),
     { href: "/tenants", label: t.sidebar.switchTenant, icon: Server },
   ];
 

@@ -125,6 +125,26 @@ const fr = {
       success: "Réussies",
       pending: "En attente",
       failed: "Échouées",
+      inbound: "Entrées",
+      outbound: "Sorties",
+      net: "Solde net",
+    },
+    directionTabs: {
+      all: "Tout",
+      in: "Entrées",
+      out: "Sorties",
+    },
+    chartTitle: "Évolution des flux",
+    chartDescription:
+      "Entrées et sorties réussies, agrégées par jour, sur les opérations filtrées.",
+    chartEmpty: "Pas encore assez d'opérations réussies pour tracer une courbe.",
+    pagination: {
+      previous: "Précédent",
+      next: "Suivant",
+      page: (current: number, total: number) => `Page ${current} sur ${total}`,
+      range: (from: number, to: number, total: number) =>
+        `${from}-${to} sur ${total}`,
+      perPage: "Par page",
     },
     historyTitle: (wallet: string) => `Historique - ${wallet}`,
     summary: (shown: number, total: number) =>
@@ -139,6 +159,7 @@ const fr = {
       amount: "Montant",
       status: "Statut",
       detail: "Détail",
+      direction: "Sens",
     },
   },
   plans: {

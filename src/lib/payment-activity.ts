@@ -53,6 +53,52 @@ const FAILED_STATUSES = new Set([
 
 export type ActivityStatusGroup = "success" | "pending" | "failed" | "other";
 
+/**
+ * Sens du flux vis-a-vis du wallet. L'API ne porte pas de champ dedie :
+ * on le derive de la source, et pour les transactions wallet du type.
+ */
+export type ActivityDirection = "in" | "out";
+
+const CREDIT_TYPE_HINTS = [
+  "CREDIT",
+  "RECHARGE",
+  "DEPOSIT",
+  "REFUND",
+  "REMBOURS",
+  "TOPUP",
+  "TOP_UP",
+  "RECEIV",
+  "TRANSFER_IN",
+  "IN",
+];
+
+export function getActivityDirection(item: PaymentActivityItem): ActivityDirection {
+  switch (item.source) {
+    case "recharge_order":
+      return "in";
+    case "payment_order":
+    case "plan_order":
+    case "bundle_order":
+      return "out";
+    case "wallet": {
+      const normalized = item.type?.trim().toUpperCase() ?? "";
+      return CREDIT_TYPE_HINTS.some((hint) => normalized.includes(hint))
+        ? "in"
+        : "out";
+    }
+    default:
+      return "out";
+  }
+}
+
+/** Montant compte dans les totaux : uniquement les operations reussies. */
+export function getActivitySignedAmount(item: PaymentActivityItem): number {
+  if (item.amount == null || getActivityStatusGroup(item.status) !== "success") {
+    return 0;
+  }
+  return getActivityDirection(item) === "in" ? item.amount : -item.amount;
+}
+
 export function getActivityStatusGroup(status?: string): ActivityStatusGroup {
   const normalized = status?.trim().toUpperCase() ?? "";
   if (SUCCESS_STATUSES.has(normalized)) {

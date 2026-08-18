@@ -52,19 +52,23 @@ export function ConsoleDataProvider({ children }: { children: ReactNode }) {
       ]);
       setUser(me);
       setSessionContext(ctx);
-      const actorId = ctx.actorId ?? me.actorId;
-      if (!actorId) {
-        setWallet(null);
-        return;
+      // Le wallet peut etre indexe sur l'actorId ou directement sur l'id du
+      // compte selon la facon dont il a ete cree : on essaie les deux.
+      const ownerCandidates = Array.from(
+        new Set([ctx.actorId ?? me.actorId, me.id].filter(Boolean) as string[]),
+      );
+      let walletData: WalletResponse | null = null;
+      for (const ownerId of ownerCandidates) {
+        try {
+          walletData = await bffGet<WalletResponse>(
+            `/api/payments/wallets/owner/${ownerId}`,
+          );
+          if (walletData) break;
+        } catch {
+          // owner suivant
+        }
       }
-      try {
-        const walletData = await bffGet<WalletResponse>(
-          `/api/payments/wallets/owner/${actorId}`,
-        );
-        setWallet(walletData);
-      } catch {
-        setWallet(null);
-      }
+      setWallet(walletData);
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Impossible de charger le wallet",
