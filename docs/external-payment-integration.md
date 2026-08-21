@@ -614,6 +614,95 @@ async function payArticle({ userId, orgId, articleId, quantity, mode, reference 
 
 ## 15. Limites connues
 
+## 16. Parcours cible : portefeuille, recharge et paiement popup
+
+Le produit Payment doit couvrir deux parcours complémentaires :
+
+### 16.1 Portail Payment connecté
+
+Après connexion Yowyob (avec MFA lorsque requis), l'utilisateur ne voit que :
+
+- ses wallets personnels ;
+- les wallets des organisations dont il est **OWNER** ;
+- les transactions appartenant à ces wallets ;
+- les opérations autorisées : transfert entre wallets, recharge, paiement et consultation.
+
+La création d'un wallet doit obligatoirement préciser son propriétaire : `PERSONAL` pour
+l'utilisateur courant ou `ORGANIZATION` pour une organisation dont il est owner. Un utilisateur
+ne doit jamais pouvoir sélectionner arbitrairement l'organisation d'un wallet.
+
+### 16.2 Paiement initié depuis une application cliente
+
+```mermaid
+sequenceDiagram
+  participant Shop as Application cliente (Shop)
+  participant Pay as Popup YowYob Payment
+  participant Auth as YowAuth / Kernel
+  participant Wallet as Payment-core
+  participant Provider as MyCoolPay / Stripe
+
+  Shop->>Pay: ouvrir avec référence + montant signé côté serveur
+  Pay->>Auth: sélectionner ou créer la session Yowyob
+  Auth-->>Pay: identité + contexte + MFA requis si nécessaire
+  Pay->>Shop: demander le contexte de commande (jamais recalculer le prix depuis l'UI)
+  Pay->>Wallet: devis/quote serveur (montant, frais, wallet éligible, solde)
+  Wallet-->>Pay: solde suffisant ou déficit + moyens de recharge
+  alt solde insuffisant
+    Pay->>Provider: initier recharge sécurisée
+    Provider-->>Pay: recharge confirmée
+    Pay->>Wallet: créditer le wallet après webhook vérifié
+  end
+  Pay->>Auth: demander MFA de confirmation de paiement (step-up)
+  Auth-->>Pay: MFA validé
+  Pay->>Wallet: confirmer le paiement avec idempotency-key
+  Wallet-->>Pay: transaction finalisée
+  Pay-->>Shop: postMessage + callback serveur + fermeture popup
+```
+
+Règles impératives :
+
+1. Le prix final est calculé côté serveur à partir de la commande de l'application cliente ; le
+   navigateur ne peut pas le modifier.
+2. Le quote possède une durée courte et une `idempotencyKey` ; le paiement ne peut être confirmé
+   qu'une fois.
+3. Une recharge n'est considérée comme disponible qu'après vérification du webhook du provider.
+4. Le MFA de connexion et le MFA de confirmation de paiement sont deux étapes distinctes.
+5. Le callback navigateur ne contient jamais de secret ; l'application cliente reçoit seulement
+   le résultat, la référence et l'identifiant de transaction. La confirmation de confiance passe
+   par un webhook serveur-à-serveur.
+6. Les erreurs `INSUFFICIENT_FUNDS`, `MFA_REQUIRED`, `PAYMENT_PENDING` et `PAYMENT_FAILED` doivent
+   être exposées explicitement à l'application cliente.
+
+### 16.3 Contrat popup recommandé
+
+```text
+GET /direct-payment
+  ?client_id=<client-app>
+  &order_reference=<reference-serveur>
+  &quote_token=<jeton-court>
+  &return_url=<origine-allowlistée>
+```
+
+Le `quote_token` est émis par le backend de l'application cliente ou par Payment après lecture
+de la commande ; il contient la référence, le montant calculé, la devise, l'expiration et une
+empreinte d'intégrité. Le front ne reçoit pas la possibilité de modifier ces champs.
+
+Après succès, Payment envoie :
+
+```json
+{
+  "type": "YOWYOB_PAYMENT_RESULT",
+  "status": "SUCCEEDED",
+  "orderReference": "SHOP-2026-0001",
+  "transactionId": "…",
+  "amount": 1000,
+  "currency": "XAF"
+}
+```
+
+L'application cliente doit vérifier `event.origin`, la référence et le webhook serveur avant de
+marquer sa commande comme payée.
+
 ### Crédit wallet organisation (`mode=of_org`)
 
 Le Kernel documente que le crédit wallet interne n'est pas exposé publiquement comme un crédit direct client. yy-pay tente :
