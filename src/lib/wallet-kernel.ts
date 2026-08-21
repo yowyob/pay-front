@@ -43,6 +43,14 @@ export type WalletTransactionDto = {
   createdAt?: string;
 };
 
+export type WalletChallengeDto = {
+  challengeToken: string;
+  expiresInSeconds: number;
+  codePreview?: string | null;
+};
+
+export type WalletPayDto = WalletTransactionDto;
+
 function headers(request: Request): Record<string, string> {
   const { clientId, apiKey } = getIwmEnv();
   const session = getSessionFromRequest(request);
@@ -165,5 +173,31 @@ export function walletTransactions(request: Request, walletId: string) {
     request,
     "GET",
     `/api/payments/wallets/${encodeURIComponent(walletId)}/transactions`,
+  );
+}
+
+export function walletPayChallenge(
+  request: Request,
+  walletId: string,
+  input: { amount: number; reference?: string },
+) {
+  return call<WalletChallengeDto>(
+    request,
+    "POST",
+    `/api/payments/wallets/${encodeURIComponent(walletId)}/pay/challenge`,
+    { amount: input.amount, reference: input.reference ?? null },
+  );
+}
+
+export function walletPay(
+  request: Request,
+  walletId: string,
+  input: { amount: number; reference?: string; challengeToken: string; code: string },
+) {
+  return call<WalletPayDto>(
+    request,
+    "POST",
+    `/api/payments/wallets/${encodeURIComponent(walletId)}/pay`,
+    input,
   );
 }

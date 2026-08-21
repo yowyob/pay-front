@@ -78,6 +78,10 @@ function DirectPaymentContent() {
     null,
   );
   const [error, setError] = useState<string | null>(null);
+  const [wallet, setWallet] = useState<{ id: string; balance: number } | null>(null);
+  const [walletChallenge, setWalletChallenge] = useState<{ challengeToken: string; codePreview?: string | null; reference: string } | null>(null);
+  const [walletCode, setWalletCode] = useState("");
+  const [walletPaying, setWalletPaying] = useState(false);
 
   useEffect(() => {
     async function loadContext() {
@@ -104,6 +108,8 @@ function DirectPaymentContent() {
           `/api/direct-payment/context?${queryString}`,
         );
         setContext(data);
+        const walletResponse = await bffFetch<{ wallet?: { id: string; balance: number } }>("/api/wallet/mine").catch(() => null);
+        if (walletResponse?.wallet) setWallet(walletResponse.wallet);
       } catch (err) {
         setError(err instanceof Error ? err.message : t.directPayment.loadError);
       } finally {
@@ -137,6 +143,39 @@ function DirectPaymentContent() {
       toast.error(err instanceof Error ? err.message : t.directPayment.launchError);
       setPaying(false);
     }
+  }
+
+  async function requestWalletChallenge() {
+    if (!queryString || !context || !wallet) return;
+    setWalletPaying(true);
+    try {
+      const result = await bffFetch<{ challenge: { challengeToken: string; codePreview?: string | null }; reference: string }>(
+        `/api/direct-payment/wallet?${queryString}`,
+        { method: "POST", body: JSON.stringify({ action: "challenge" }) },
+      );
+      setWalletChallenge({ ...result.challenge, reference: result.reference });
+      toast.success("Un code MFA a été envoyé pour confirmer le paiement.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Solde insuffisant ou wallet indisponible");
+    } finally { setWalletPaying(false); }
+  }
+
+  async function confirmWalletPayment() {
+    if (!queryString || !walletChallenge) return;
+    setWalletPaying(true);
+    try {
+      await bffFetch(`/api/direct-payment/wallet?${queryString}`, {
+        method: "POST",
+        body: JSON.stringify({ action: "confirm", challengeToken: walletChallenge.challengeToken, code: walletCode }),
+      });
+      toast.success("Paiement confirmé.");
+      const targetOrigin = context?.returnUrl ? new URL(context.returnUrl).origin : window.location.origin;
+      window.opener?.postMessage({ type: "yypay:payment:complete", paymentStatus: "SUCCEEDED", reference: walletChallenge.reference }, targetOrigin);
+      if (window.opener) window.close();
+      else window.location.assign(`/direct-payment/return?payment=success`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Code MFA invalide ou paiement refusé");
+    } finally { setWalletPaying(false); }
   }
 
   const modeLabel =
@@ -225,6 +264,29 @@ function DirectPaymentContent() {
                 )}
                 {t.directPayment.payWithMycoolpay}
               </Button>
+
+              {context.mode === "for_org" && wallet && (
+                <div className="yypay:space-y-3 yypay:rounded-lg yypay:border yypay:border-border yypay:p-4">
+                  <div className="yypay:flex yypay:items-center yypay:justify-between yypay:text-sm">
+                    <span className="yypay:text-muted-foreground">Payer avec mon wallet</span>
+                    <span className="yypay:font-semibold">Solde : {formatAmount(wallet.balance, context.currency, intlTag)}</span>
+                  </div>
+                  {!walletChallenge ? (
+                    <Button variant="outline" className="yypay:w-full" onClick={requestWalletChallenge}
+                      disabled={walletPaying || wallet.balance < context.totalAmount}>
+                      {walletPaying && <Loader2 className="yypay:h-4 yypay:w-4 yypay:animate-spin" />}
+                      {wallet.balance < context.totalAmount ? "Solde insuffisant — rechargez le wallet" : "Payer avec le wallet"}
+                    </Button>
+                  ) : (
+                    <div className="yypay:space-y-2">
+                      <input className="yypay:w-full yypay:rounded-md yypay:border yypay:border-border yypay:bg-background yypay:px-3 yypay:py-2" value={walletCode} onChange={(e) => setWalletCode(e.target.value)} placeholder="Code MFA reçu" inputMode="numeric" />
+                      <Button className="yypay:w-full" onClick={confirmWalletPayment} disabled={walletPaying || !walletCode.trim()}>
+                        {walletPaying && <Loader2 className="yypay:h-4 yypay:w-4 yypay:animate-spin" />} Confirmer le paiement
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <p className="yypay:text-center yypay:text-xs yypay:text-muted-foreground">
                 {t.directPayment.serverRecalcNote}
