@@ -33,6 +33,16 @@ cp .env.example .env
 | `COOKIE_TENANT_ID`        | Nom du cookie tenant (`X-Tenant-Id`), renseigné via `discover-contexts` / `select-context`   |
 | `PAYMENT_CALLBACK_URL`         | URL de retour MYCOOLPAY en cas de succès (ex. `http://localhost:3000/console?payment=success`) |
 | `PAYMENT_FAILURE_CALLBACK_URL` | URL de retour MYCOOLPAY en cas d'échec ou d'annulation (ex. `http://localhost:3000/console?payment=failure`) |
+| `NEXT_PUBLIC_BASE_PATH`   | Sous-chemin de déploiement (ex. `/pay` si servi depuis `https://kernel-core.yowyob.com/pay`). Vide en local. Doit être défini **au build**. |
+
+## Déploiement sous un sous-chemin (ex. `/pay`)
+
+Si le frontend est servi depuis `https://kernel-core.yowyob.com/pay` (plutôt qu'à la racine du domaine) :
+
+1. Définir `NEXT_PUBLIC_BASE_PATH=/pay` **avant `npm run build`** (la valeur est figée dans le bundle, pas modifiable au runtime).
+2. Mettre à jour `APP_BASE_URL` et les `PAYMENT_*_CALLBACK_URL` pour inclure le préfixe `/pay` (ex. `https://kernel-core.yowyob.com/pay/console?payment=success`).
+3. Le reverse proxy/ingress devant l'app doit transmettre les requêtes `/pay/*` **sans stripper le préfixe** (Next.js gère lui-même le routing via `basePath`).
+4. Les cookies de session sont scopés au sous-chemin (`path` = `NEXT_PUBLIC_BASE_PATH` si défini, `/` sinon) pour éviter qu'ils circulent vers d'autres services hébergés sur le même domaine (ex. `/kernel-api`).
 
 ## Parcours utilisateur
 

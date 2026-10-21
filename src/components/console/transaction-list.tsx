@@ -96,7 +96,9 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [directionFilter, setDirectionFilter] = useState<DirectionFilter>("all");
   const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
+  // La page est mémorisée avec les filtres auxquels elle se rapporte : quand un filtre change, on
+  // repart de la première page sans appeler setState dans un effet (rendu en cascade).
+  const [pageState, setPageState] = useState<{ cle: string; page: number }>({ cle: "", page: 1 });
   const [pageSize, setPageSize] = useState<number>(PAGE_SIZE_OPTIONS[0]);
 
   useEffect(() => {
@@ -182,10 +184,10 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activity, statusFilter, directionFilter, normalizedSearch, locale]);
 
-  // Tout changement de filtre ramene a la premiere page.
-  useEffect(() => {
-    setPage(1);
-  }, [statusFilter, directionFilter, normalizedSearch, pageSize]);
+  const cleFiltres = [statusFilter, directionFilter, normalizedSearch, pageSize].join("|");
+  const page = pageState.cle === cleFiltres ? pageState.page : 1;
+  const setPage = (suivante: number | ((courante: number) => number)) =>
+    setPageState({ cle: cleFiltres, page: typeof suivante === "function" ? suivante(page) : suivante });
 
   const pageCount = Math.max(1, Math.ceil(filteredActivity.length / pageSize));
   const currentPage = Math.min(page, pageCount);

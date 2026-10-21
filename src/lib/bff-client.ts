@@ -1,3 +1,5 @@
+import { withBasePath } from "@/lib/base-path";
+
 type ApiEnvelope<T> = {
   success?: boolean;
   data?: T;
@@ -16,11 +18,16 @@ export class BffError extends Error {
   }
 }
 
+function resolveBffPath(path: string): string {
+  return withBasePath(path);
+}
+
 export async function bffFetch<T>(
   path: string,
   init?: RequestInit,
 ): Promise<T> {
-  const response = await fetch(path, {
+  const resolvedPath = resolveBffPath(path);
+  const response = await fetch(resolvedPath, {
     ...init,
     credentials: "include",
     headers: {
@@ -69,7 +76,8 @@ export async function bffPostEnvelope<T>(
   path: string,
   payload?: unknown,
 ): Promise<{ success?: boolean; data?: T; message?: string; errorCode?: string }> {
-  const response = await fetch(path, {
+  const resolvedPath = resolveBffPath(path);
+  const response = await fetch(resolvedPath, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },

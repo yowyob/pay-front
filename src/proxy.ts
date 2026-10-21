@@ -8,6 +8,13 @@ import { NextResponse } from "next/server";
 
 const PUBLIC_PATHS = ["/", "/login", "/tenants", "/organizations", "/direct-payment"];
 
+function redirectTo(request: NextRequest, pathname: string) {
+  const url = request.nextUrl.clone();
+  url.pathname = pathname;
+  url.search = "";
+  return NextResponse.redirect(url);
+}
+
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const accessToken = request.cookies.get(getAccessTokenCookieName())?.value;
@@ -29,28 +36,26 @@ export function proxy(request: NextRequest) {
       !request.nextUrl.searchParams.get("step")
     ) {
       if (organizationId) {
-        return NextResponse.redirect(new URL("/console", request.url));
+        return redirectTo(request, "/console");
       }
       if (tenantId) {
-        return NextResponse.redirect(new URL("/organizations", request.url));
+        return redirectTo(request, "/organizations");
       }
-      return NextResponse.redirect(new URL("/tenants", request.url));
+      return redirectTo(request, "/tenants");
     }
     return NextResponse.next();
   }
 
   if (!accessToken) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    return redirectTo(request, "/login");
   }
 
   if (!tenantId && pathname !== "/tenants") {
-    return NextResponse.redirect(new URL("/tenants", request.url));
+    return redirectTo(request, "/tenants");
   }
 
   if (tenantId && pathname === "/tenants") {
-    return NextResponse.redirect(
-      new URL(organizationId ? "/console" : "/organizations", request.url),
-    );
+    return redirectTo(request, organizationId ? "/console" : "/organizations");
   }
 
   if (
@@ -58,11 +63,11 @@ export function proxy(request: NextRequest) {
     pathname !== "/organizations" &&
     pathname !== "/tenants"
   ) {
-    return NextResponse.redirect(new URL("/organizations", request.url));
+    return redirectTo(request, "/organizations");
   }
 
   if (organizationId && pathname === "/organizations") {
-    return NextResponse.redirect(new URL("/console", request.url));
+    return redirectTo(request, "/console");
   }
 
   return NextResponse.next();

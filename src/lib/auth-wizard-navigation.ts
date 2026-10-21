@@ -1,5 +1,7 @@
+import { withBasePath } from "@/lib/base-path";
+
 export function hardNavigate(path: string) {
-  window.location.assign(path);
+  window.location.assign(withBasePath(path));
 }
 
 export function tenantsPath(returnTo?: string | null) {

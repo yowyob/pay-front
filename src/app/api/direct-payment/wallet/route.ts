@@ -49,7 +49,9 @@ export async function POST(request: Request) {
     const payload = {
       event: "payment.success" as const,
       paymentOrderId: payment.data?.id,
-      orderId: payment.data?.id,
+      // Le webhook marchand exige un identifiant d'ordre : à défaut de celui du noyau, la référence
+      // de la transaction, que le marchand connaît aussi.
+      orderId: payment.data?.id ?? reference,
       organizationId: context.params.orgId,
       articleId: context.params.articleId,
       userId: context.params.userId,
