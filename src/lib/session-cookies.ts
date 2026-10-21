@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 
+const BASE_PATH =
+  (process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || "").trim() ||
+  "/";
+
 const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
   sameSite: "lax" as const,
-  path: "/",
+  path: BASE_PATH,
 };
 
 export type SessionCookieData = {

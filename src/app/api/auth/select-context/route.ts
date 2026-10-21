@@ -15,39 +15,55 @@ type ApiResponseContextualLoginResponse =
 type LoginResponse = components["schemas"]["LoginResponse"];
 
 export async function POST(request: Request) {
-  const body = await readJsonBody<SelectLoginContextRequest>(request);
-  const client = createIwmAuthClient(request);
-  const result = await client.POST("/api/auth/select-context", {
-    body: asJsonBody(body),
-  });
+  try {
+    const body = await readJsonBody<SelectLoginContextRequest>(request);
+    const client = createIwmAuthClient(request);
+    const result = await client.POST("/api/auth/select-context", {
+      body: asJsonBody(body),
+    });
 
-  const payload = (result.data ?? result.error) as
-    | ApiResponseContextualLoginResponse
-    | undefined;
-  const response = NextResponse.json(payload ?? null, {
-    status: result.response.status,
-  });
+    const payload = (result.data ?? result.error) as
+      | ApiResponseContextualLoginResponse
+      | undefined;
+    const response = NextResponse.json(payload ?? null, {
+      status: result.response?.status ?? 500,
+    });
 
-  const contextual = payload?.data;
-  const session = contextual?.session as LoginResponse | undefined;
-  const sessionCookies = extractLoginSession(session);
-  const requestSession = getSessionFromRequest(request);
+    const contextual = payload?.data;
+    const session = contextual?.session as LoginResponse | undefined;
+    const sessionCookies = extractLoginSession(session);
+    const requestSession = getSessionFromRequest(request);
 
-  const preservedAccessToken =
-    sessionCookies?.accessToken ??
-    (requestSession.authorization?.startsWith("Bearer ")
-      ? requestSession.authorization.slice(7)
-      : undefined);
+    const preservedAccessToken =
+      sessionCookies?.accessToken ??
+      (requestSession.authorization?.startsWith("Bearer ")
+        ? requestSession.authorization.slice(7)
+        : undefined);
 
-  applySessionCookies(response, {
-    accessToken: preservedAccessToken,
-    refreshToken: sessionCookies?.refreshToken ?? requestSession.refreshToken,
-    actorId: sessionCookies?.actorId ?? requestSession.actorId,
-    organizationId: contextual?.selectedOrganizationId,
-    tenantId: contextual?.selectedTenantId ?? requestSession.tenantId,
-    accessExpiresInSeconds: sessionCookies?.accessExpiresInSeconds,
-    refreshExpiresInSeconds: sessionCookies?.refreshExpiresInSeconds,
-  });
+    applySessionCookies(response, {
+      accessToken: preservedAccessToken,
+      refreshToken: sessionCookies?.refreshToken ?? requestSession.refreshToken,
+      actorId: sessionCookies?.actorId ?? requestSession.actorId,
+      organizationId: contextual?.selectedOrganizationId ?? body?.organizationId,
+      tenantId: contextual?.selectedTenantId ?? requestSession.tenantId,
+      accessExpiresInSeconds: sessionCookies?.accessExpiresInSeconds,
+      refreshExpiresInSeconds: sessionCookies?.refreshExpiresInSeconds,
+    });
 
-  return response;
+    return response;
+  } catch (error) {
+    console.error("[BFF /api/auth/select-context error]:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        message:
+          error instanceof Error
+            ? `Erreur de communication avec le serveur IWM (${error.message})`
+            : "Erreur de connexion au serveur backend IWM",
+        errorCode: "BACKEND_COMMUNICATION_ERROR",
+      },
+      { status: 502 },
+    );
+  }
 }
+
