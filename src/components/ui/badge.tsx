@@ -10,9 +10,9 @@ const badgeVariants = cva(
         default: "yypay:bg-accent yypay:text-accent-foreground",
         secondary: "yypay:bg-muted yypay:text-muted-foreground",
         success:
-          "yypay:bg-emerald-500/15 yypay:text-emerald-700 dark:yypay:text-emerald-300",
+          "yypay:bg-emerald-500/15 yypay:text-emerald-700 yypay:dark:text-emerald-300",
         destructive:
-          "yypay:bg-rose-500/15 yypay:text-rose-700 dark:yypay:text-rose-300",
+          "yypay:bg-rose-500/15 yypay:text-rose-700 yypay:dark:text-rose-300",
       },
     },
     defaultVariants: {

@@ -36,7 +36,7 @@ function TabsTrigger({
   return (
     <TabsPrimitive.Trigger
       className={cn(
-        "yypay:inline-flex yypay:flex-1 yypay:items-center yypay:justify-center yypay:rounded-md yypay:px-3 yypay:py-1.5 yypay:text-sm yypay:font-medium yypay:text-muted-foreground yypay:transition-all data-[state=active]:yypay:bg-primary data-[state=active]:yypay:text-primary-foreground data-[state=active]:yypay:shadow-sm",
+        "yypay:inline-flex yypay:flex-1 yypay:items-center yypay:justify-center yypay:rounded-md yypay:px-3 yypay:py-1.5 yypay:text-sm yypay:font-medium yypay:text-muted-foreground yypay:transition-all yypay:data-[state=active]:bg-primary yypay:data-[state=active]:text-primary-foreground yypay:data-[state=active]:shadow-sm",
         className,
       )}
       {...props}

@@ -185,7 +185,7 @@ function DirectPaymentContent() {
 
   return (
     <div className="yypay:flex yypay:min-h-full yypay:flex-col yypay:bg-background">
-      <header className="yypay:border-b yypay:border-border yypay:bg-card yypay:px-4 yypay:py-4 sm:yypay:px-6">
+      <header className="yypay:border-b yypay:border-border yypay:bg-card yypay:px-4 yypay:py-4 yypay:sm:px-6">
         <div className="yypay:mx-auto yypay:flex yypay:max-w-lg yypay:items-center yypay:gap-3">
           <span className="yypay:flex yypay:h-10 yypay:w-10 yypay:items-center yypay:justify-center yypay:rounded-lg yypay:bg-primary yypay:text-primary-foreground">
             <CreditCard className="yypay:h-5 yypay:w-5" />
@@ -201,7 +201,7 @@ function DirectPaymentContent() {
         </div>
       </header>
 
-      <main className="yypay:mx-auto yypay:w-full yypay:max-w-lg yypay:flex-1 yypay:px-4 yypay:py-8 sm:yypay:px-6">
+      <main id="contenu" tabIndex={-1} className="yypay:focus:outline-none yypay:mx-auto yypay:w-full yypay:max-w-lg yypay:flex-1 yypay:px-4 yypay:py-8 yypay:sm:px-6">
         {loading && (
           <div className="yypay:space-y-4">
             <Skeleton className="yypay:h-8 yypay:w-2/3" />
@@ -279,7 +279,7 @@ function DirectPaymentContent() {
                     </Button>
                   ) : (
                     <div className="yypay:space-y-2">
-                      <input className="yypay:w-full yypay:rounded-md yypay:border yypay:border-border yypay:bg-background yypay:px-3 yypay:py-2" value={walletCode} onChange={(e) => setWalletCode(e.target.value)} placeholder="Code MFA reçu" inputMode="numeric" />
+                      <input aria-label="Code MFA reçu" className="yypay:w-full yypay:rounded-md yypay:border yypay:border-border yypay:bg-background yypay:px-3 yypay:py-2" value={walletCode} onChange={(e) => setWalletCode(e.target.value)} placeholder="Code MFA reçu" inputMode="numeric" />
                       <Button className="yypay:w-full" onClick={confirmWalletPayment} disabled={walletPaying || !walletCode.trim()}>
                         {walletPaying && <Loader2 className="yypay:h-4 yypay:w-4 yypay:animate-spin" />} Confirmer le paiement
                       </Button>

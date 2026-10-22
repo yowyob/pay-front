@@ -13,13 +13,15 @@ export function LanguageToggle({ className }: LanguageToggleProps) {
   const { locale, setLocale, t } = useLocale();
   const next = locale === "fr" ? "en" : "fr";
 
+  // Le nom accessible commence par le texte visible (« fr ») : c'est ce que prononce
+  // un utilisateur de commande vocale.
   return (
     <Button
       type="button"
       variant="ghost"
       size="sm"
       className={cn("yypay:shrink-0 yypay:gap-1.5 yypay:px-2", className)}
-      aria-label={t.language.switchLabel}
+      aria-label={`${locale} — ${t.language.switchLabel}`}
       onClick={() => setLocale(next)}
     >
       <Languages className="yypay:h-4 yypay:w-4" />

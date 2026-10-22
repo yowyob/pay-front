@@ -5,6 +5,7 @@ const en: Messages = {
     close: "Close",
     cancel: "Cancel",
     loading: "Loading…",
+    skipToContent: "Skip to content",
   },
   theme: {
     toggle: "Change theme",

@@ -231,12 +231,12 @@ function ConsoleChrome({ children }: { children: ReactNode }) {
         sidebar={<ConsoleSidebar />}
         onOpenHelp={restart}
       />
-      <div className="yypay:mx-auto yypay:flex yypay:w-full yypay:max-w-6xl yypay:flex-1 yypay:items-start yypay:gap-6 yypay:px-4 yypay:py-8 sm:yypay:px-6">
-        <aside className="yypay:sticky yypay:top-24 yypay:hidden yypay:w-56 yypay:shrink-0 lg:yypay:block">
+      <div className="yypay:mx-auto yypay:flex yypay:w-full yypay:max-w-6xl yypay:flex-1 yypay:items-start yypay:gap-6 yypay:px-4 yypay:py-8 yypay:sm:px-6">
+        <aside className="yypay:sticky yypay:top-24 yypay:hidden yypay:w-56 yypay:shrink-0 yypay:lg:block">
           <ConsoleSidebar />
         </aside>
 
-        <main className="yypay:min-w-0 yypay:flex-1">{children}</main>
+        <main id="contenu" tabIndex={-1} className="yypay:focus:outline-none yypay:min-w-0 yypay:flex-1">{children}</main>
       </div>
     </div>
   );

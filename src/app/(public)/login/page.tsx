@@ -118,7 +118,7 @@ function LoginPageContent() {
   return (
     <div className="yypay:flex yypay:min-h-full yypay:flex-col yypay:bg-background">
       <SiteHeader />
-      <main className="yypay:flex yypay:flex-1 yypay:items-center yypay:justify-center yypay:px-4 yypay:py-10">
+      <main id="contenu" tabIndex={-1} className="yypay:focus:outline-none yypay:flex yypay:flex-1 yypay:items-center yypay:justify-center yypay:px-4 yypay:py-10">
         <Card className="yypay:w-full yypay:max-w-lg yypay:shadow-md">
           <CardHeader className="yypay:pb-2">
             {step === "credentials" ? (
@@ -164,12 +164,13 @@ function LoginPageContent() {
                       value={secret}
                       onChange={(e) => setSecret(e.target.value)}
                       required
-                      className="yypay:pr-10"
+                      className="yypay:pr-12"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="yypay:absolute yypay:right-3 yypay:top-1/2 yypay:-translate-y-1/2 yypay:text-secondary"
+                      aria-pressed={showPassword}
+                      className="yypay:absolute yypay:right-1 yypay:top-1/2 yypay:flex yypay:h-9 yypay:w-9 yypay:-translate-y-1/2 yypay:items-center yypay:justify-center yypay:rounded-md yypay:text-secondary yypay:hover:bg-muted"
                       aria-label={
                         showPassword
                           ? t.login.hidePassword
@@ -225,7 +226,7 @@ function LoginPageContent() {
               {t.login.delegatedAuthNote}
             </p>
             <p className="yypay:mt-2 yypay:text-center yypay:text-xs yypay:text-primary">
-              <Link href="/" className="hover:yypay:text-primary">
+              <Link href="/" className="yypay:hover:text-primary">
                 {t.login.backHome}
               </Link>
             </p>

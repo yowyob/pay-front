@@ -99,7 +99,7 @@ export function PlanAutoRenewalToggle({
         {isActive ? t.plans.autoRenewal.disable : t.plans.autoRenewal.enable}
       </Button>
 
-      <p className="yypay:mt-2 yypay:text-[11px] yypay:text-muted-foreground">
+      <p className="yypay:mt-2 yypay:text-xs yypay:text-muted-foreground">
         {t.plans.autoRenewal.footer(planCode)}
       </p>
     </div>

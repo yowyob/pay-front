@@ -69,10 +69,10 @@ export function PlansPricingSection({
   return (
     <section id={id} className={cn("yypay:w-full", className)}>
       <div className="yypay:mx-auto yypay:max-w-3xl yypay:text-center">
-        <h2 className="yypay:text-2xl yypay:font-bold yypay:tracking-tight yypay:text-foreground sm:yypay:text-4xl">
+        <h2 className="yypay:text-2xl yypay:font-bold yypay:tracking-tight yypay:text-foreground yypay:sm:text-4xl">
           {t.plans.section.title}
         </h2>
-        <p className="yypay:mt-3 yypay:text-base yypay:text-muted-foreground sm:yypay:text-lg">
+        <p className="yypay:mt-3 yypay:text-base yypay:text-muted-foreground yypay:sm:text-lg">
           {t.plans.section.description}
         </p>
 
@@ -93,7 +93,7 @@ export function PlansPricingSection({
       </div>
 
       {loading ? (
-        <div className="yypay:mx-auto yypay:mt-10 yypay:grid yypay:max-w-7xl yypay:grid-cols-1 yypay:gap-6 sm:yypay:mt-12 md:yypay:grid-cols-2 xl:yypay:grid-cols-3 2xl:yypay:grid-cols-4">
+        <div className="yypay:mx-auto yypay:mt-10 yypay:grid yypay:max-w-7xl yypay:grid-cols-1 yypay:gap-6 yypay:sm:mt-12 yypay:md:grid-cols-2 yypay:xl:grid-cols-3 yypay:2xl:grid-cols-4">
           {Array.from({ length: 4 }).map((_, index) => (
             <Skeleton key={index} className="yypay:h-[32rem] yypay:rounded-2xl" />
           ))}
@@ -103,7 +103,7 @@ export function PlansPricingSection({
           {t.plans.section.empty}
         </p>
       ) : (
-        <div className="yypay:mx-auto yypay:mt-10 yypay:grid yypay:max-w-7xl yypay:grid-cols-1 yypay:items-stretch yypay:gap-6 sm:yypay:mt-12 md:yypay:grid-cols-2 xl:yypay:grid-cols-3 2xl:yypay:grid-cols-4">
+        <div className="yypay:mx-auto yypay:mt-10 yypay:grid yypay:max-w-7xl yypay:grid-cols-1 yypay:items-stretch yypay:gap-6 yypay:sm:mt-12 yypay:md:grid-cols-2 yypay:xl:grid-cols-3 yypay:2xl:grid-cols-4">
           {plans.map((plan) => {
             const planCode = plan.code ?? "";
             const highlighted = Boolean(planCode && planCode === popularPlanCode);

@@ -123,7 +123,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
                     "yypay:h-1.5 yypay:rounded-full yypay:transition-all",
                     index === step
                       ? "yypay:w-6 yypay:bg-primary"
-                      : "yypay:w-1.5 yypay:bg-primary/25 hover:yypay:bg-primary/40",
+                      : "yypay:w-1.5 yypay:bg-primary/25 yypay:hover:bg-primary/40",
                   )}
                 />
               ))}

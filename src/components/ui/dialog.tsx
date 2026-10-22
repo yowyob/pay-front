@@ -62,7 +62,7 @@ function DialogContent({
         {...props}
       >
         {children}
-        <DialogPrimitive.Close className="yypay:absolute yypay:right-4 yypay:top-4 yypay:rounded-sm yypay:text-secondary hover:yypay:text-foreground">
+        <DialogPrimitive.Close className="yypay:absolute yypay:right-4 yypay:top-4 yypay:rounded-sm yypay:text-secondary yypay:hover:text-foreground">
           <X className="yypay:h-4 yypay:w-4" />
           <span className="yypay:sr-only">{t.common.close}</span>
         </DialogPrimitive.Close>
@@ -108,7 +108,7 @@ function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       className={cn(
-        "yypay:flex yypay:flex-col-reverse yypay:gap-3 sm:yypay:flex-row sm:yypay:justify-end",
+        "yypay:flex yypay:flex-col-reverse yypay:gap-3 yypay:sm:flex-row yypay:sm:justify-end",
         className,
       )}
       {...props}

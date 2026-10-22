@@ -61,7 +61,7 @@ export default function WalletPage() {
   return (
     <>
       <div className="yypay:mb-8">
-        <h1 className="yypay:text-2xl yypay:font-bold yypay:text-foreground sm:yypay:text-3xl">
+        <h1 className="yypay:text-2xl yypay:font-bold yypay:text-foreground yypay:sm:text-3xl">
           Mon wallet
         </h1>
         <p className="yypay:mt-2 yypay:text-muted-foreground">
@@ -118,7 +118,7 @@ export default function WalletPage() {
         </div>
       </Card>
 
-      <div className="yypay:mb-8 yypay:grid yypay:grid-cols-1 yypay:gap-6 lg:yypay:grid-cols-2">
+      <div className="yypay:mb-8 yypay:grid yypay:grid-cols-1 yypay:gap-6 yypay:lg:grid-cols-2">
         <MoneyTransferCard walletId={wallet?.id} onDone={refreshWallet} />
         <MoneyWithdrawalCard walletId={wallet?.id} onDone={refreshWallet} />
       </div>
