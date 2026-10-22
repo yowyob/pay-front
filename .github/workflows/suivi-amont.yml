@@ -1,0 +1,109 @@
+name: Suivi de l'amont
+
+# Ce dépôt est la source du déploiement (agent + CI). L'amont nathanaelzuchuon/yy-pay-interface
+# n'a pas d'historique commun avec lui : ses commits s'intègrent en appliquant le diff depuis le
+# dernier commit intégré (.github/upstream-sha), puis en relisant une PR.
+#
+# Chaque jour, si l'amont a avancé : pousse une branche amont/<sha> avec le diff appliqué
+# (git apply -3) et ouvre une issue avec le lien de création de la PR. Les workflows de
+# l'organisation ne peuvent pas ouvrir de PR eux-mêmes. Si le diff ne s'applique pas, l'issue
+# donne la commande à lancer à la main.
+
+on:
+  schedule:
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: suivi-amont
+  cancel-in-progress: false
+
+env:
+  AMONT: https://github.com/nathanaelzuchuon/yy-pay-interface.git
+
+jobs:
+  amont:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Comparer à l'amont
+        id: cmp
+        run: |
+          set -euo pipefail
+          integre=$(tr -d '[:space:]' < .github/upstream-sha)
+          git remote add amont "$AMONT"
+          git fetch --quiet --no-tags amont main
+          actuel=$(git rev-parse amont/main)
+          echo "integre=$integre" >> "$GITHUB_OUTPUT"
+          echo "actuel=$actuel" >> "$GITHUB_OUTPUT"
+          if [ "$integre" = "$actuel" ]; then
+            echo "À jour avec l'amont ($actuel)."
+            echo "nouveau=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          branche="amont/${actuel:0:7}"
+          echo "branche=$branche" >> "$GITHUB_OUTPUT"
+          if git ls-remote --exit-code --heads origin "$branche" >/dev/null; then
+            echo "Branche $branche déjà poussée : rien à refaire."
+            echo "nouveau=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "nouveau=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Appliquer le diff de l'amont
+        id: apply
+        if: steps.cmp.outputs.nouveau == 'true'
+        run: |
+          set -euo pipefail
+          integre=${{ steps.cmp.outputs.integre }}
+          actuel=${{ steps.cmp.outputs.actuel }}
+          git log --format='- %h %s (%an)' "$integre..$actuel" > /tmp/commits.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "${{ steps.cmp.outputs.branche }}"
+          if git diff "$integre" "$actuel" | git apply -3 --index; then
+            echo "conflit=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "conflit=true" >> "$GITHUB_OUTPUT"
+            git reset --quiet --hard HEAD
+          fi
+          echo "$actuel" > .github/upstream-sha
+          git add .github/upstream-sha
+          git commit --quiet -m "chore(amont): intègre yy-pay-interface jusqu'à ${actuel:0:7}" -m "$(cat /tmp/commits.txt)"
+          git push --quiet origin "${{ steps.cmp.outputs.branche }}"
+
+      - name: Ouvrir l'issue de relecture
+        if: steps.cmp.outputs.nouveau == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          branche=${{ steps.cmp.outputs.branche }}
+          {
+            echo "L'amont \`nathanaelzuchuon/yy-pay-interface\` a avancé jusqu'à \`${{ steps.cmp.outputs.actuel }}\`."
+            echo
+            echo "### Commits"
+            cat /tmp/commits.txt
+            echo
+            if [ "${{ steps.apply.outputs.conflit }}" = "true" ]; then
+              echo "### ⚠️ Le diff ne s'applique pas proprement"
+              echo "La branche \`$branche\` ne porte que la mise à jour de \`.github/upstream-sha\`. À intégrer à la main :"
+              echo '```'
+              echo "git fetch https://github.com/nathanaelzuchuon/yy-pay-interface.git main"
+              echo "git diff ${{ steps.cmp.outputs.integre }} ${{ steps.cmp.outputs.actuel }} | git apply -3"
+              echo '```'
+            else
+              echo "Le diff est appliqué sur la branche \`$branche\`."
+            fi
+            echo
+            echo "**Créer la PR :** https://github.com/${{ github.repository }}/compare/main...$branche?expand=1"
+            echo
+            echo "À vérifier avant de fusionner : \`basePath: \"/pay\"\` dans \`next.config\`, la version de Next.js, et les classes \`yypay:\` (préfixe en tête : \`yypay:sm:…\`)."
+          } > /tmp/issue.md
+          gh issue create --title "Amont yy-pay-interface : ${{ steps.cmp.outputs.actuel }}" --body-file /tmp/issue.md
