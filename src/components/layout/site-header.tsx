@@ -33,7 +33,7 @@ export function SiteHeader({ showLogin = true }: SiteHeaderProps) {
 
   return (
     <header className="yypay:sticky yypay:top-0 yypay:z-40 yypay:border-b yypay:border-border yypay:bg-card/90 yypay:backdrop-blur">
-      <div className="yypay:mx-auto yypay:flex yypay:h-16 yypay:max-w-6xl yypay:items-center yypay:justify-between yypay:gap-3 yypay:px-4 sm:yypay:px-6">
+      <div className="yypay:mx-auto yypay:flex yypay:h-16 yypay:max-w-6xl yypay:items-center yypay:justify-between yypay:gap-3 yypay:px-4 yypay:sm:px-6">
         <Link
           href="/"
           className="yypay:flex yypay:min-w-0 yypay:items-center yypay:gap-2 yypay:text-foreground"
@@ -41,28 +41,28 @@ export function SiteHeader({ showLogin = true }: SiteHeaderProps) {
           <span className="yypay:flex yypay:h-9 yypay:w-9 yypay:shrink-0 yypay:items-center yypay:justify-center yypay:rounded-lg yypay:bg-primary yypay:text-primary-foreground">
             <Wallet className="yypay:h-5 yypay:w-5" />
           </span>
-          <span className="yypay:truncate yypay:text-base yypay:font-semibold sm:yypay:text-lg">
+          <span className="yypay:truncate yypay:text-base yypay:font-semibold yypay:sm:text-lg">
             YowYob Payment
           </span>
         </Link>
 
-        <nav className="yypay:hidden yypay:items-center yypay:gap-8 md:yypay:flex">
+        <nav className="yypay:hidden yypay:items-center yypay:gap-8 yypay:md:flex">
           {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="yypay:text-sm yypay:font-medium yypay:text-muted-foreground hover:yypay:text-foreground"
+              className="yypay:text-sm yypay:font-medium yypay:text-muted-foreground yypay:hover:text-foreground"
             >
               {item.label}
             </Link>
           ))}
         </nav>
 
-        <div className="yypay:flex yypay:items-center yypay:gap-1 sm:yypay:gap-2">
+        <div className="yypay:flex yypay:items-center yypay:gap-1 yypay:sm:gap-2">
           <LanguageToggle />
           <ThemeToggle />
 
-          <div className="yypay:hidden yypay:items-center yypay:gap-2 md:yypay:flex">
+          <div className="yypay:hidden yypay:items-center yypay:gap-2 yypay:md:flex">
             {showLogin && (
               <Button asChild size="sm">
                 <Link href="/login">{t.siteHeader.login}</Link>
@@ -71,14 +71,14 @@ export function SiteHeader({ showLogin = true }: SiteHeaderProps) {
           </div>
 
           <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger asChild className="md:yypay:hidden">
+            <SheetTrigger asChild className="yypay:md:hidden">
               <Button variant="ghost" size="icon" aria-label={t.siteHeader.menu}>
                 <Menu className="yypay:h-5 yypay:w-5" />
               </Button>
             </SheetTrigger>
             <SheetContent
               side="right"
-              className="md:yypay:hidden yypay:w-full yypay:max-w-sm yypay:gap-0 yypay:p-0"
+              className="yypay:md:hidden yypay:w-full yypay:max-w-sm yypay:gap-0 yypay:p-0"
             >
               <SheetHeader className="yypay:border-b yypay:border-border yypay:px-6 yypay:py-5 yypay:pr-14">
                 <SheetTitle>{t.siteHeader.menu}</SheetTitle>
@@ -93,7 +93,7 @@ export function SiteHeader({ showLogin = true }: SiteHeaderProps) {
                     className={cn(
                       "yypay:flex yypay:items-center yypay:justify-between yypay:rounded-lg yypay:px-4 yypay:py-3.5",
                       "yypay:text-base yypay:font-medium yypay:text-foreground",
-                      "hover:yypay:bg-muted active:yypay:bg-muted",
+                      "yypay:hover:bg-muted yypay:active:bg-muted",
                     )}
                   >
                     {item.label}
@@ -119,7 +119,7 @@ export function SiteHeader({ showLogin = true }: SiteHeaderProps) {
                         "yypay:inline-flex yypay:h-11 yypay:items-center yypay:justify-center",
                         "yypay:rounded-lg yypay:bg-primary yypay:px-4",
                         "yypay:text-sm yypay:font-medium yypay:text-primary-foreground",
-                        "hover:yypay:bg-primary/90",
+                        "yypay:hover:bg-primary/90",
                       )}
                     >
                       {t.siteHeader.login}

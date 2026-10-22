@@ -9,13 +9,13 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "yypay:bg-primary yypay:text-primary-foreground hover:yypay:bg-primary/90",
+          "yypay:bg-primary yypay:text-primary-foreground yypay:hover:bg-primary/90",
         secondary:
-          "yypay:bg-muted yypay:text-foreground hover:yypay:bg-border",
+          "yypay:bg-muted yypay:text-foreground yypay:hover:bg-border",
         outline:
-          "yypay:border yypay:border-primary yypay:bg-card yypay:text-primary hover:yypay:bg-accent",
-        ghost: "hover:yypay:bg-muted yypay:text-foreground",
-        navy: "yypay:bg-foreground yypay:text-background hover:yypay:opacity-90",
+          "yypay:border yypay:border-primary yypay:bg-card yypay:text-primary yypay:hover:bg-accent",
+        ghost: "yypay:hover:bg-muted yypay:text-foreground",
+        navy: "yypay:bg-foreground yypay:text-background yypay:hover:opacity-90",
       },
       size: {
         default: "yypay:h-10 yypay:px-4 yypay:py-2",

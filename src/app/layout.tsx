@@ -2,6 +2,7 @@ import { Providers } from "@/components/providers";
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import { SkipLink } from "@/components/a11y/skip-link";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta",
@@ -26,7 +27,10 @@ export default function RootLayout({
       className={`${plusJakartaSans.variable} yypay:h-full yypay:antialiased`}
     >
       <body className="yypay:min-h-full yypay:flex yypay:flex-col yypay:bg-background yypay:font-sans yypay:text-foreground">
-        <Providers>{children}</Providers>
+        <Providers>
+          <SkipLink />
+          {children}
+        </Providers>
       </body>
     </html>
   );

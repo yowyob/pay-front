@@ -141,13 +141,24 @@ export function ActivityFlowChart({
       </div>
 
       <div className="yypay:relative">
+        {/* Au clavier : Tab entre dans le graphique, les flèches parcourent les points. */}
         <svg
           viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
-          className="yypay:h-56 yypay:w-full"
           role="img"
           aria-label={`${labels.inbound} / ${labels.outbound}`}
           preserveAspectRatio="none"
           onMouseLeave={() => setHovered(null)}
+          tabIndex={0}
+          onFocus={() => setHovered((h) => h ?? buckets.length - 1)}
+          onBlur={() => setHovered(null)}
+          onKeyDown={(event) => {
+            if (event.key !== "ArrowLeft" && event.key !== "ArrowRight" && event.key !== "Escape") return;
+            event.preventDefault();
+            if (event.key === "Escape") return setHovered(null);
+            const pas = event.key === "ArrowLeft" ? -1 : 1;
+            setHovered((h) => Math.min(buckets.length - 1, Math.max(0, (h ?? buckets.length - 1) + pas)));
+          }}
+          className="yypay:h-56 yypay:w-full yypay:rounded-md"
         >
           {/* Grille recessive */}
           {[0, 0.5, 1].map((ratio) => (
@@ -247,8 +258,24 @@ export function ActivityFlowChart({
           })}
         </svg>
 
+        {/* Les mêmes données en tableau, pour les lecteurs d'écran (le SVG n'est qu'une image). */}
+        <table className="yypay:sr-only">
+          <thead>
+            <tr><th scope="col"></th><th scope="col">{labels.inbound}</th><th scope="col">{labels.outbound}</th></tr>
+          </thead>
+          <tbody>
+            {buckets.map((bucket) => (
+              <tr key={`sr-${bucket.key}`}>
+                <th scope="row">{bucket.label}</th>
+                <td>+{formatAmount(bucket.inbound)}</td>
+                <td>-{formatAmount(bucket.outbound)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
         {active && (
-          <div className="yypay:pointer-events-none yypay:absolute yypay:right-2 yypay:top-2 yypay:rounded-lg yypay:border yypay:border-border yypay:bg-card yypay:px-3 yypay:py-2 yypay:text-xs yypay:shadow-md">
+          <div aria-live="polite" className="yypay:pointer-events-none yypay:absolute yypay:right-2 yypay:top-2 yypay:rounded-lg yypay:border yypay:border-border yypay:bg-card yypay:px-3 yypay:py-2 yypay:text-xs yypay:shadow-md">
             <p className="yypay:font-medium yypay:text-foreground">
               {active.label}
             </p>

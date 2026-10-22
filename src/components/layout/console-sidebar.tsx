@@ -61,7 +61,7 @@ export function ConsoleSidebar({ onNavigate, className }: ConsoleSidebarProps) {
                   href={href}
                   onClick={onNavigate}
                   className={cn(
-                    "yypay:flex yypay:items-center yypay:gap-3 yypay:rounded-lg yypay:px-3 yypay:py-2 yypay:text-sm yypay:font-medium yypay:text-muted-foreground yypay:transition-colors hover:yypay:bg-muted hover:yypay:text-foreground",
+                    "yypay:flex yypay:items-center yypay:gap-3 yypay:rounded-lg yypay:px-3 yypay:py-2 yypay:text-sm yypay:font-medium yypay:text-muted-foreground yypay:transition-colors yypay:hover:bg-muted yypay:hover:text-foreground",
                     isActive && "yypay:bg-muted yypay:text-foreground",
                   )}
                 >
@@ -84,7 +84,7 @@ export function ConsoleSidebar({ onNavigate, className }: ConsoleSidebarProps) {
               <Link
                 href={href}
                 onClick={onNavigate}
-                className="yypay:flex yypay:items-center yypay:gap-3 yypay:rounded-lg yypay:px-3 yypay:py-2 yypay:text-sm yypay:font-medium yypay:text-muted-foreground yypay:transition-colors hover:yypay:bg-muted hover:yypay:text-foreground"
+                className="yypay:flex yypay:items-center yypay:gap-3 yypay:rounded-lg yypay:px-3 yypay:py-2 yypay:text-sm yypay:font-medium yypay:text-muted-foreground yypay:transition-colors yypay:hover:bg-muted yypay:hover:text-foreground"
               >
                 <Icon className="yypay:h-4 yypay:w-4 yypay:shrink-0" />
                 {label}

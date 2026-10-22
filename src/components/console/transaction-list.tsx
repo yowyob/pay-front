@@ -241,14 +241,14 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
 
   return (
     <div className="yypay:space-y-6">
-      <div className="yypay:grid yypay:grid-cols-1 yypay:gap-3 sm:yypay:grid-cols-3">
+      <div className="yypay:grid yypay:grid-cols-1 yypay:gap-3 yypay:sm:grid-cols-3">
         <Card>
           <CardContent className="yypay:p-4">
             <p className="yypay:flex yypay:items-center yypay:gap-1.5 yypay:text-xs yypay:font-medium yypay:text-muted-foreground">
               <ArrowDownLeft className="yypay:h-3.5 yypay:w-3.5" />
               {t.transactionList.stats.inbound}
             </p>
-            <p className="yypay:mt-1 yypay:text-2xl yypay:font-bold yypay:text-emerald-600 dark:yypay:text-emerald-400">
+            <p className="yypay:mt-1 yypay:text-2xl yypay:font-bold yypay:text-emerald-600 yypay:dark:text-emerald-400">
               +{formatTotal(totals.inbound)}
             </p>
           </CardContent>
@@ -259,7 +259,7 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
               <ArrowUpRight className="yypay:h-3.5 yypay:w-3.5" />
               {t.transactionList.stats.outbound}
             </p>
-            <p className="yypay:mt-1 yypay:text-2xl yypay:font-bold yypay:text-rose-600 dark:yypay:text-rose-400">
+            <p className="yypay:mt-1 yypay:text-2xl yypay:font-bold yypay:text-rose-600 yypay:dark:text-rose-400">
               -{formatTotal(totals.outbound)}
             </p>
           </CardContent>
@@ -296,7 +296,7 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
         </CardContent>
       </Card>
 
-      <div className="yypay:grid yypay:grid-cols-2 yypay:gap-3 sm:yypay:grid-cols-4">
+      <div className="yypay:grid yypay:grid-cols-2 yypay:gap-3 yypay:sm:grid-cols-4">
         <Card>
           <CardContent className="yypay:p-4">
             <p className="yypay:text-xs yypay:font-medium yypay:text-muted-foreground">
@@ -312,7 +312,7 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
             <p className="yypay:text-xs yypay:font-medium yypay:text-muted-foreground">
               {t.transactionList.stats.success}
             </p>
-            <p className="yypay:mt-1 yypay:text-2xl yypay:font-bold yypay:text-emerald-600 dark:yypay:text-emerald-400">
+            <p className="yypay:mt-1 yypay:text-2xl yypay:font-bold yypay:text-emerald-600 yypay:dark:text-emerald-400">
               {stats.success}
             </p>
           </CardContent>
@@ -332,7 +332,7 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
             <p className="yypay:text-xs yypay:font-medium yypay:text-muted-foreground">
               {t.transactionList.stats.failed}
             </p>
-            <p className="yypay:mt-1 yypay:text-2xl yypay:font-bold yypay:text-rose-600 dark:yypay:text-rose-400">
+            <p className="yypay:mt-1 yypay:text-2xl yypay:font-bold yypay:text-rose-600 yypay:dark:text-rose-400">
               {stats.failed}
             </p>
           </CardContent>
@@ -348,13 +348,13 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
             </CardDescription>
           </div>
 
-          <div className="yypay:flex yypay:flex-col yypay:gap-3 sm:yypay:flex-row sm:yypay:items-center sm:yypay:justify-between">
+          <div className="yypay:flex yypay:flex-col yypay:gap-3 yypay:sm:flex-row yypay:sm:items-center yypay:sm:justify-between">
             <Tabs
               value={statusFilter}
               onValueChange={(value) => setStatusFilter(value as StatusFilter)}
               className="yypay:gap-0"
             >
-              <TabsList className="yypay:w-full sm:yypay:w-auto">
+              <TabsList className="yypay:w-full yypay:sm:w-auto">
                 {statusTabs.map((tab) => (
                   <TabsTrigger key={tab.value} value={tab.value}>
                     {tab.label}
@@ -370,7 +370,7 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
               }
               className="yypay:gap-0"
             >
-              <TabsList className="yypay:w-full sm:yypay:w-auto">
+              <TabsList className="yypay:w-full yypay:sm:w-auto">
                 {directionTabs.map((tab) => (
                   <TabsTrigger key={tab.value} value={tab.value}>
                     {tab.label}
@@ -379,7 +379,7 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
               </TabsList>
             </Tabs>
 
-            <div className="yypay:relative sm:yypay:w-64">
+            <div className="yypay:relative yypay:sm:w-64">
               <Search className="yypay:pointer-events-none yypay:absolute yypay:left-3 yypay:top-1/2 yypay:h-4 yypay:w-4 yypay:-translate-y-1/2 yypay:text-muted-foreground" />
               <Input
                 value={search}
@@ -404,7 +404,7 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
                 <button
                   type="button"
                   onClick={resetFilters}
-                  className="yypay:text-sm yypay:font-medium yypay:text-primary hover:yypay:underline"
+                  className="yypay:text-sm yypay:font-medium yypay:text-primary yypay:hover:underline"
                 >
                   {t.transactionList.resetFilters}
                 </button>
@@ -412,7 +412,7 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
             </div>
           ) : (
             <>
-              <div className="yypay:hidden yypay:overflow-x-auto md:yypay:block">
+              <div className="yypay:hidden yypay:overflow-x-auto yypay:md:block">
                 <table className="yypay:w-full yypay:text-left yypay:text-sm">
                   <thead>
                     <tr className="yypay:border-b yypay:border-border yypay:text-secondary">
@@ -432,15 +432,15 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
                       const isInbound = direction === "in";
                       const DirectionIcon = isInbound ? ArrowDownLeft : ArrowUpRight;
                       const directionClass = isInbound
-                        ? "yypay:text-emerald-600 dark:yypay:text-emerald-400"
-                        : "yypay:text-rose-600 dark:yypay:text-rose-400";
+                        ? "yypay:text-emerald-600 yypay:dark:text-emerald-400"
+                        : "yypay:text-rose-600 yypay:dark:text-rose-400";
                       const directionLabel = isInbound
                         ? t.transactionList.directionTabs.in
                         : t.transactionList.directionTabs.out;
                       return (
                         <tr
                           key={item.id}
-                          className="yypay:border-b yypay:border-border/60 hover:yypay:bg-muted/40"
+                          className="yypay:border-b yypay:border-border/60 yypay:hover:bg-muted/40"
                         >
                           <td className="yypay:py-3 yypay:pr-4">
                             <div className="yypay:flex yypay:items-center yypay:gap-2 yypay:font-medium yypay:text-foreground">
@@ -483,15 +483,15 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
                   </tbody>
                 </table>
               </div>
-              <div className="yypay:space-y-3 md:yypay:hidden">
+              <div className="yypay:space-y-3 yypay:md:hidden">
                 {pagedActivity.map((item) => {
                   const Icon = SOURCE_ICONS[item.source];
                   const { date, time } = formatActivityDate(item.createdAt, intlTag);
                   const isInbound = getActivityDirection(item) === "in";
                   const DirectionIcon = isInbound ? ArrowDownLeft : ArrowUpRight;
                   const directionClass = isInbound
-                    ? "yypay:text-emerald-600 dark:yypay:text-emerald-400"
-                    : "yypay:text-rose-600 dark:yypay:text-rose-400";
+                    ? "yypay:text-emerald-600 yypay:dark:text-emerald-400"
+                    : "yypay:text-rose-600 yypay:dark:text-rose-400";
                   return (
                     <div
                       key={item.id}
@@ -529,7 +529,7 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
                 })}
               </div>
 
-              <div className="yypay:mt-4 yypay:flex yypay:flex-col yypay:gap-3 yypay:border-t yypay:border-border yypay:pt-4 sm:yypay:flex-row sm:yypay:items-center sm:yypay:justify-between">
+              <div className="yypay:mt-4 yypay:flex yypay:flex-col yypay:gap-3 yypay:border-t yypay:border-border yypay:pt-4 yypay:sm:flex-row yypay:sm:items-center yypay:sm:justify-between">
                 <div className="yypay:flex yypay:items-center yypay:gap-3 yypay:text-xs yypay:text-secondary">
                   <span>
                     {t.transactionList.pagination.range(
@@ -559,7 +559,7 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
                     type="button"
                     onClick={() => setPage((current) => Math.max(1, current - 1))}
                     disabled={currentPage <= 1}
-                    className="yypay:inline-flex yypay:items-center yypay:gap-1 yypay:rounded-md yypay:border yypay:border-border yypay:px-2.5 yypay:py-1.5 yypay:text-xs yypay:font-medium yypay:text-foreground disabled:yypay:opacity-40 hover:yypay:bg-muted/60"
+                    className="yypay:inline-flex yypay:items-center yypay:gap-1 yypay:rounded-md yypay:border yypay:border-border yypay:px-2.5 yypay:py-1.5 yypay:text-xs yypay:font-medium yypay:text-foreground yypay:disabled:opacity-40 yypay:hover:bg-muted/60"
                   >
                     <ChevronLeft className="yypay:h-3.5 yypay:w-3.5" />
                     {t.transactionList.pagination.previous}
@@ -573,7 +573,7 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
                       setPage((current) => Math.min(pageCount, current + 1))
                     }
                     disabled={currentPage >= pageCount}
-                    className="yypay:inline-flex yypay:items-center yypay:gap-1 yypay:rounded-md yypay:border yypay:border-border yypay:px-2.5 yypay:py-1.5 yypay:text-xs yypay:font-medium yypay:text-foreground disabled:yypay:opacity-40 hover:yypay:bg-muted/60"
+                    className="yypay:inline-flex yypay:items-center yypay:gap-1 yypay:rounded-md yypay:border yypay:border-border yypay:px-2.5 yypay:py-1.5 yypay:text-xs yypay:font-medium yypay:text-foreground yypay:disabled:opacity-40 yypay:hover:bg-muted/60"
                   >
                     {t.transactionList.pagination.next}
                     <ChevronRight className="yypay:h-3.5 yypay:w-3.5" />

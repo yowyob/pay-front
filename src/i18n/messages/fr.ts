@@ -3,6 +3,7 @@ const fr = {
     close: "Fermer",
     cancel: "Annuler",
     loading: "Chargement…",
+    skipToContent: "Aller au contenu",
   },
   theme: {
     toggle: "Changer le thème",

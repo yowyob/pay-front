@@ -60,7 +60,7 @@ export function ConsoleHeader({
 
   return (
     <header className="yypay:sticky yypay:top-0 yypay:z-40 yypay:border-b yypay:border-border yypay:bg-card/95 yypay:backdrop-blur">
-      <div className="yypay:mx-auto yypay:flex yypay:h-16 yypay:max-w-6xl yypay:items-center yypay:justify-between yypay:gap-3 yypay:px-4 sm:yypay:px-6">
+      <div className="yypay:mx-auto yypay:flex yypay:h-16 yypay:max-w-6xl yypay:items-center yypay:justify-between yypay:gap-3 yypay:px-4 yypay:sm:px-6">
         <div className="yypay:flex yypay:min-w-0 yypay:items-center yypay:gap-1">
           {sidebar && (
             <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
@@ -68,7 +68,7 @@ export function ConsoleHeader({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="yypay:shrink-0 lg:yypay:hidden"
+                  className="yypay:shrink-0 yypay:lg:hidden"
                   aria-label={t.header.openNav}
                 >
                   <Menu className="yypay:h-5 yypay:w-5" />
@@ -94,13 +94,13 @@ export function ConsoleHeader({
             <span className="yypay:truncate yypay:font-semibold yypay:text-foreground">
               YowYob Payment
             </span>
-            <span className="yypay:hidden yypay:text-muted-foreground sm:yypay:inline">
+            <span className="yypay:hidden yypay:text-muted-foreground yypay:sm:inline">
               / {title}
             </span>
           </Link>
         </div>
 
-        <div className="yypay:flex yypay:items-center yypay:gap-1 sm:yypay:gap-2">
+        <div className="yypay:flex yypay:items-center yypay:gap-1 yypay:sm:gap-2">
           {onOpenHelp && (
             <Button
               variant="ghost"

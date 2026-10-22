@@ -61,17 +61,17 @@ function SheetContent({
         className={cn(
           "yypay:fixed yypay:z-50 yypay:flex yypay:flex-col yypay:bg-card yypay:shadow-lg yypay:transition yypay:ease-in-out",
           side === "right" &&
-            "yypay:inset-y-0 yypay:right-0 yypay:h-full yypay:w-full yypay:max-w-md yypay:border-l yypay:border-border sm:yypay:max-w-lg",
+            "yypay:inset-y-0 yypay:right-0 yypay:h-full yypay:w-full yypay:max-w-md yypay:border-l yypay:border-border yypay:sm:max-w-lg",
           side === "bottom" &&
-            "yypay:inset-x-0 yypay:bottom-0 yypay:h-auto yypay:max-h-[85vh] yypay:rounded-t-xl yypay:border-t yypay:border-border md:yypay:hidden",
+            "yypay:inset-x-0 yypay:bottom-0 yypay:h-auto yypay:max-h-[85vh] yypay:rounded-t-xl yypay:border-t yypay:border-border yypay:md:hidden",
           side === "left" &&
-            "yypay:inset-y-0 yypay:left-0 yypay:h-full yypay:w-full yypay:max-w-xs yypay:border-r yypay:border-border sm:yypay:max-w-sm",
+            "yypay:inset-y-0 yypay:left-0 yypay:h-full yypay:w-full yypay:max-w-xs yypay:border-r yypay:border-border yypay:sm:max-w-sm",
           className,
         )}
         {...props}
       >
         {children}
-        <DialogPrimitive.Close className="yypay:absolute yypay:right-4 yypay:top-4 yypay:rounded-sm yypay:text-secondary hover:yypay:text-foreground">
+        <DialogPrimitive.Close className="yypay:absolute yypay:right-4 yypay:top-4 yypay:rounded-sm yypay:text-secondary yypay:hover:text-foreground">
           <X className="yypay:h-4 yypay:w-4" />
           <span className="yypay:sr-only">{t.common.close}</span>
         </DialogPrimitive.Close>

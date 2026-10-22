@@ -131,8 +131,8 @@ export function PlanPricingCard({
       className={cn(
         "yypay:relative yypay:flex yypay:h-full yypay:flex-col yypay:rounded-2xl yypay:border yypay:bg-card yypay:transition-all yypay:duration-200",
         highlighted
-          ? "yypay:z-10 yypay:border-primary yypay:shadow-popular lg:yypay:scale-[1.02]"
-          : "yypay:border-border yypay:shadow-card hover:yypay:-translate-y-0.5 hover:yypay:shadow-card-hover",
+          ? "yypay:z-10 yypay:border-primary yypay:shadow-popular yypay:lg:scale-[1.02]"
+          : "yypay:border-border yypay:shadow-card yypay:hover:-translate-y-0.5 yypay:hover:shadow-card-hover",
       )}
     >
       {highlighted && (
@@ -141,9 +141,9 @@ export function PlanPricingCard({
         </div>
       )}
 
-      <div className="yypay:flex yypay:flex-1 yypay:flex-col yypay:p-6 sm:yypay:p-7">
+      <div className="yypay:flex yypay:flex-1 yypay:flex-col yypay:p-6 yypay:sm:p-7">
         <div className="yypay:space-y-1">
-          <h3 className="yypay:text-xl yypay:font-bold yypay:text-foreground sm:yypay:text-2xl">
+          <h3 className="yypay:text-xl yypay:font-bold yypay:text-foreground yypay:sm:text-2xl">
             {getPlanLabel(plan, t)}
           </h3>
           {plan.description ? (
@@ -162,7 +162,7 @@ export function PlanPricingCard({
             <Skeleton className="yypay:h-10 yypay:w-40" />
           ) : quotedPrice ? (
             <>
-              <p className="yypay:text-3xl yypay:font-bold yypay:tracking-tight yypay:text-foreground sm:yypay:text-4xl">
+              <p className="yypay:text-3xl yypay:font-bold yypay:tracking-tight yypay:text-foreground yypay:sm:text-4xl">
                 {quotedPrice}
               </p>
               {yearlyNote && (
@@ -247,7 +247,7 @@ export function PlanPricingCard({
         {hasMoreFeatures && (
           <button
             type="button"
-            className="yypay:mt-4 yypay:inline-flex yypay:items-center yypay:gap-1 yypay:text-sm yypay:font-medium yypay:text-primary hover:yypay:underline"
+            className="yypay:mt-4 yypay:inline-flex yypay:items-center yypay:gap-1 yypay:text-sm yypay:font-medium yypay:text-primary yypay:hover:underline"
             onClick={() => setExpanded((value) => !value)}
             aria-expanded={expanded}
           >

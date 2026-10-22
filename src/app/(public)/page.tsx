@@ -64,10 +64,10 @@ export default function LandingPage() {
   return (
     <div className="yypay:flex yypay:min-h-full yypay:flex-col yypay:bg-background">
       <SiteHeader />
-      <main className="yypay:flex-1">
+      <main id="contenu" tabIndex={-1} className="yypay:focus:outline-none yypay:flex-1">
         <section
           id="accueil"
-          className="yypay:relative yypay:overflow-hidden yypay:px-4 yypay:py-16 sm:yypay:px-6 sm:yypay:py-24"
+          className="yypay:relative yypay:overflow-hidden yypay:px-4 yypay:py-16 yypay:sm:px-6 yypay:sm:py-24"
         >
           <div
             aria-hidden
@@ -75,13 +75,13 @@ export default function LandingPage() {
           />
           <div className="yypay:relative yypay:mx-auto yypay:max-w-3xl yypay:text-center">
             <Badge className="yypay:mb-4">{t.landing.badge}</Badge>
-            <h1 className="yypay:text-3xl yypay:font-bold yypay:tracking-tight yypay:text-foreground sm:yypay:text-5xl">
+            <h1 className="yypay:text-3xl yypay:font-bold yypay:tracking-tight yypay:text-foreground yypay:sm:text-5xl">
               {t.landing.heroTitle}
             </h1>
-            <p className="yypay:mt-4 yypay:text-base yypay:text-muted-foreground sm:yypay:text-lg">
+            <p className="yypay:mt-4 yypay:text-base yypay:text-muted-foreground yypay:sm:text-lg">
               {t.landing.heroDescription}
             </p>
-            <div className="yypay:mt-8 yypay:flex yypay:flex-col yypay:items-center yypay:justify-center yypay:gap-3 sm:yypay:flex-row">
+            <div className="yypay:mt-8 yypay:flex yypay:flex-col yypay:items-center yypay:justify-center yypay:gap-3 yypay:sm:flex-row">
               <Button asChild size="lg">
                 <Link href="/login">{t.landing.login}</Link>
               </Button>
@@ -90,7 +90,7 @@ export default function LandingPage() {
               </Button>
             </div>
 
-            <ul className="yypay:mt-10 yypay:flex yypay:flex-col yypay:items-center yypay:justify-center yypay:gap-3 yypay:text-sm yypay:text-muted-foreground sm:yypay:flex-row sm:yypay:gap-6">
+            <ul className="yypay:mt-10 yypay:flex yypay:flex-col yypay:items-center yypay:justify-center yypay:gap-3 yypay:text-sm yypay:text-muted-foreground yypay:sm:flex-row yypay:sm:gap-6">
               {trustItems.map((item, index) => {
                 const Icon = TRUST_ICONS[index];
                 return (
@@ -106,24 +106,24 @@ export default function LandingPage() {
 
         <section
           id="comment-ca-marche"
-          className="yypay:border-y yypay:border-border yypay:bg-card yypay:py-16 sm:yypay:py-20"
+          className="yypay:border-y yypay:border-border yypay:bg-card yypay:py-16 yypay:sm:py-20"
         >
-          <div className="yypay:mx-auto yypay:max-w-6xl yypay:px-4 sm:yypay:px-6">
+          <div className="yypay:mx-auto yypay:max-w-6xl yypay:px-4 yypay:sm:px-6">
             <div className="yypay:mb-10 yypay:text-center">
-              <h2 className="yypay:text-2xl yypay:font-bold yypay:text-foreground sm:yypay:text-3xl">
+              <h2 className="yypay:text-2xl yypay:font-bold yypay:text-foreground yypay:sm:text-3xl">
                 {t.landing.howItWorksTitle}
               </h2>
               <p className="yypay:mt-2 yypay:text-muted-foreground">
                 {t.landing.howItWorksDescription}
               </p>
             </div>
-            <div className="yypay:grid yypay:grid-cols-1 yypay:gap-6 sm:yypay:grid-cols-2 lg:yypay:grid-cols-4">
+            <div className="yypay:grid yypay:grid-cols-1 yypay:gap-6 yypay:sm:grid-cols-2 yypay:lg:grid-cols-4">
               {steps.map((step, index) => {
                 const Icon = STEP_ICONS[index];
                 return (
                   <Card
                     key={step.title}
-                    className="yypay:relative yypay:transition-transform hover:yypay:-translate-y-0.5 hover:yypay:shadow-card-hover"
+                    className="yypay:relative yypay:transition-transform yypay:hover:-translate-y-0.5 yypay:hover:shadow-card-hover"
                   >
                     <CardHeader>
                       <div className="yypay:flex yypay:items-center yypay:justify-between">
@@ -146,23 +146,23 @@ export default function LandingPage() {
 
         <section
           id="documentation"
-          className="yypay:mx-auto yypay:max-w-6xl yypay:px-4 yypay:py-16 sm:yypay:px-6"
+          className="yypay:mx-auto yypay:max-w-6xl yypay:px-4 yypay:py-16 yypay:sm:px-6"
         >
           <div className="yypay:mb-10 yypay:text-center">
-            <h2 className="yypay:text-2xl yypay:font-bold yypay:text-foreground sm:yypay:text-3xl">
+            <h2 className="yypay:text-2xl yypay:font-bold yypay:text-foreground yypay:sm:text-3xl">
               {t.landing.featuresTitle}
             </h2>
             <p className="yypay:mt-2 yypay:text-muted-foreground">
               {t.landing.featuresDescription}
             </p>
           </div>
-          <div className="yypay:grid yypay:grid-cols-1 yypay:gap-6 sm:yypay:grid-cols-2">
+          <div className="yypay:grid yypay:grid-cols-1 yypay:gap-6 yypay:sm:grid-cols-2">
             {features.map((feature, index) => {
               const Icon = FEATURE_ICONS[index];
               return (
                 <Card
                   key={feature.title}
-                  className="yypay:transition-transform hover:yypay:-translate-y-0.5 hover:yypay:shadow-card-hover"
+                  className="yypay:transition-transform yypay:hover:-translate-y-0.5 yypay:hover:shadow-card-hover"
                 >
                   <CardHeader className="yypay:flex-row yypay:items-start yypay:gap-4 yypay:space-y-0">
                     <span className="yypay:flex yypay:h-11 yypay:w-11 yypay:shrink-0 yypay:items-center yypay:justify-center yypay:rounded-xl yypay:bg-primary yypay:text-primary-foreground">
@@ -183,9 +183,9 @@ export default function LandingPage() {
 
         <section
           id="tarifs"
-          className="yypay:border-t yypay:border-border yypay:bg-muted/30 yypay:py-16 sm:yypay:py-20"
+          className="yypay:border-t yypay:border-border yypay:bg-muted/30 yypay:py-16 yypay:sm:py-20"
         >
-          <div className="yypay:mx-auto yypay:max-w-7xl yypay:px-4 sm:yypay:px-6">
+          <div className="yypay:mx-auto yypay:max-w-7xl yypay:px-4 yypay:sm:px-6">
             <PlansPricingSection
               plans={plans}
               loading={loadingPlans}
@@ -203,7 +203,7 @@ export default function LandingPage() {
       </main>
 
       <footer className="yypay:border-t yypay:border-border yypay:bg-card">
-        <div className="yypay:mx-auto yypay:flex yypay:max-w-6xl yypay:flex-col yypay:items-center yypay:justify-between yypay:gap-4 yypay:px-4 yypay:py-8 sm:yypay:flex-row sm:yypay:px-6">
+        <div className="yypay:mx-auto yypay:flex yypay:max-w-6xl yypay:flex-col yypay:items-center yypay:justify-between yypay:gap-4 yypay:px-4 yypay:py-8 yypay:sm:flex-row yypay:sm:px-6">
           <div className="yypay:flex yypay:items-center yypay:gap-2">
             <span className="yypay:flex yypay:h-8 yypay:w-8 yypay:items-center yypay:justify-center yypay:rounded-lg yypay:bg-primary yypay:text-primary-foreground">
               <Wallet className="yypay:h-4 yypay:w-4" />

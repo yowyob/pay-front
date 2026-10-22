@@ -37,10 +37,10 @@ export function BillingPeriodToggle({
             onClick={() => onChange(period)}
             className={cn(
               "yypay:rounded-full yypay:px-4 yypay:py-2 yypay:text-sm yypay:font-medium yypay:transition-all",
-              "yypay:min-w-[5.5rem] sm:yypay:min-w-[6.5rem]",
+              "yypay:min-w-[5.5rem] yypay:sm:min-w-[6.5rem]",
               selected
                 ? "yypay:bg-primary yypay:text-primary-foreground yypay:shadow-sm"
-                : "yypay:text-secondary hover:yypay:bg-muted hover:yypay:text-foreground",
+                : "yypay:text-secondary yypay:hover:bg-muted yypay:hover:text-foreground",
             )}
             aria-pressed={selected}
           >
