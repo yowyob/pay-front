@@ -48,7 +48,9 @@ export function useCommercialPlanQuotes(
       setLoading(true);
       setError(null);
 
-      void Promise.all(
+      // Un devis par plan, indépendant : un plan sans prix (service non tarifé) ne doit plus
+      // effacer les devis des autres — avant, un seul échec affichait « Quote unavailable » partout.
+      void Promise.allSettled(
         codes.map(async (code) => {
           const quote = await bffPost<CommercialPlanQuoteResponse>(
             `/api/plans/${code}/quote`,
@@ -60,9 +62,15 @@ export function useCommercialPlanQuotes(
           return [code, quote] as const;
         }),
       )
-        .then((entries) => {
-          if (!cancelled) {
-            setQuotes(Object.fromEntries(entries));
+        .then((results) => {
+          if (cancelled) return;
+          const entries = results.flatMap((result) =>
+            result.status === "fulfilled" ? [result.value] : [],
+          );
+          setQuotes(Object.fromEntries(entries));
+          if (entries.length === 0 && results.length > 0) {
+            const first = results.find((result) => result.status === "rejected");
+            throw first?.status === "rejected" ? first.reason : new Error("Impossible de charger les tarifs");
           }
         })
         .catch((quoteError) => {

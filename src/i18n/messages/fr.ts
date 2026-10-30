@@ -224,7 +224,7 @@ const fr = {
       paymentInProgress: "Paiement en cours",
       inCart: "Dans le panier",
       calculatingPrice: "Calcul du tarif…",
-      quoteUnavailable: "Devis indisponible",
+      quoteUnavailable: "Prix à venir",
       finalizePayment:
         "Finalisez le paiement MYCOOLPAY en cours avant d'en lancer un nouveau.",
       addOnPrefix: "Add-on :",

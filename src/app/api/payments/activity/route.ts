@@ -1,7 +1,6 @@
 import { createIwmPaymentClient } from "@/lib/iwm-payment-client";
 import {
     fromCommercialPlanOrder,
-    fromPaymentOrder,
     fromServiceBundleOrder,
     fromWalletRechargeOrder,
     fromWalletTransaction,
@@ -17,8 +16,6 @@ type ApiResponseListTransactionResponse =
   components["schemas"]["ApiResponseListTransactionResponse"];
 type ApiResponseListWalletRechargeResponse =
   components["schemas"]["ApiResponseListWalletRechargeResponse"];
-type ApiResponseListPaymentOrderResponse =
-  components["schemas"]["ApiResponseListPaymentOrderResponse"];
 type ApiResponseListCommercialPlanOrderResponse =
   components["schemas"]["ApiResponseListCommercialPlanOrderResponse"];
 type ApiResponseListServiceBundleOrderResponse =
@@ -44,7 +41,6 @@ export async function GET(request: Request) {
   const [
     walletTransactionsResult,
     rechargeOrdersResult,
-    paymentOrdersResult,
     planOrdersResult,
     bundleOrdersResult,
   ] = await Promise.allSettled([
@@ -56,9 +52,6 @@ export async function GET(request: Request) {
         path: { walletId },
         query: queryLimit,
       },
-    }),
-    client.GET("/api/payments/orders", {
-      params: { query: queryLimit },
     }),
     client.GET("/api/commercial-plans/orders", {
       params: { query: queryLimit },
@@ -94,18 +87,10 @@ export async function GET(request: Request) {
     }
   }
 
-  if (paymentOrdersResult.status === "fulfilled") {
-    const payload = paymentOrdersResult.value.data as
-      | ApiResponseListPaymentOrderResponse
-      | undefined;
-    for (const order of unwrapApiList(payload)) {
-      const item = fromPaymentOrder(order);
-      if (item) {
-        activity.push(item);
-      }
-    }
-  }
-
+  // Les ordres de paiement des APPLICATIONS (GET /api/payments/orders) n'appartiennent à aucun
+  // portefeuille : ils montraient à chacun les paiements de tout le tenant (« Payment Billing » des
+  // autres comptes). L'activité d'un portefeuille = ses transactions, ses recharges, et les
+  // commandes de plans et de packs de l'organisation active (bornées par le noyau).
   if (planOrdersResult.status === "fulfilled") {
     const payload = planOrdersResult.value.data as
       | ApiResponseListCommercialPlanOrderResponse

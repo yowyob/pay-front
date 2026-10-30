@@ -113,7 +113,8 @@ export function getPlanFeatures(plan: CommercialPlanResponse, t: Messages): stri
     (code) => `${formatFeatureLabel(code, t)} ${t.plans.addOnPackSuffix}`,
   );
   const services = (plan.serviceCodes ?? []).map((code) => formatFeatureLabel(code, t));
-  return [...packs, ...services];
+  // Deux codes de service peuvent porter le même libellé (« Sales » apparaissait deux fois).
+  return [...new Set([...packs, ...services])];
 }
 
 export function getPopularPlanCode(

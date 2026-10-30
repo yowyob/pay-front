@@ -93,7 +93,7 @@ export function PlansPricingSection({
       </div>
 
       {loading ? (
-        <div className="yypay:mx-auto yypay:mt-10 yypay:grid yypay:max-w-7xl yypay:grid-cols-1 yypay:gap-6 yypay:sm:mt-12 yypay:md:grid-cols-2 yypay:xl:grid-cols-3 yypay:2xl:grid-cols-4">
+        <div className="yypay:mx-auto yypay:mt-10 yypay:grid yypay:max-w-7xl yypay:grid-cols-[repeat(auto-fill,minmax(min(100%,17rem),1fr))] yypay:gap-6 yypay:sm:mt-12">
           {Array.from({ length: 4 }).map((_, index) => (
             <Skeleton key={index} className="yypay:h-[32rem] yypay:rounded-2xl" />
           ))}
@@ -103,7 +103,7 @@ export function PlansPricingSection({
           {t.plans.section.empty}
         </p>
       ) : (
-        <div className="yypay:mx-auto yypay:mt-10 yypay:grid yypay:max-w-7xl yypay:grid-cols-1 yypay:items-stretch yypay:gap-6 yypay:sm:mt-12 yypay:md:grid-cols-2 yypay:xl:grid-cols-3 yypay:2xl:grid-cols-4">
+        <div className="yypay:mx-auto yypay:mt-10 yypay:grid yypay:max-w-7xl yypay:grid-cols-[repeat(auto-fill,minmax(min(100%,17rem),1fr))] yypay:items-stretch yypay:gap-6 yypay:sm:mt-12">
           {plans.map((plan) => {
             const planCode = plan.code ?? "";
             const highlighted = Boolean(planCode && planCode === popularPlanCode);
