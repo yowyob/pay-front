@@ -14,8 +14,19 @@ type LoginResponse = components["schemas"]["LoginResponse"];
 type ApiResponseLoginResponse =
   components["schemas"]["ApiResponseLoginResponse"];
 
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function POST(request: Request) {
-  const body = await readJsonBody<ConfirmMfaLoginRequest>(request);
+  // organizationId est propre au BFF (organisation choisie avant le MFA) : il n'est pas transmis au noyau.
+  const { organizationId: requestedOrganizationId, ...body } =
+    (await readJsonBody<ConfirmMfaLoginRequest & { organizationId?: string }>(
+      request,
+    )) ?? ({} as ConfirmMfaLoginRequest & { organizationId?: string });
+  const organizationId =
+    requestedOrganizationId && UUID_PATTERN.test(requestedOrganizationId)
+      ? requestedOrganizationId
+      : undefined;
   const session = getSessionFromRequest(request);
 
   if (!session.tenantId) {
@@ -45,8 +56,10 @@ export async function POST(request: Request) {
   const loginData = payload?.data as LoginResponse | undefined;
   const sessionCookies = extractLoginSession(loginData);
   if (result.response.ok && sessionCookies) {
-    clearOrganizationCookie(response);
-    applySessionCookies(response, sessionCookies);
+    if (!organizationId) {
+      clearOrganizationCookie(response);
+    }
+    applySessionCookies(response, { ...sessionCookies, organizationId });
   }
 
   return response;

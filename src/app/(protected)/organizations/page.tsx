@@ -96,6 +96,7 @@ function OrganizationsPageContent() {
     setSelectionToken,
     setDiscoverData,
     setMfaToken,
+    setPendingOrganizationId,
     clearSensitive,
   } = useAuthWizardStore();
   const [loading, setLoading] = useState(true);
@@ -284,20 +285,28 @@ function OrganizationsPageContent() {
       // d'envoi (« A code was already sent recently »).
       const { selectionToken, contextId } = await resolveSelectionContext(org);
 
+      // MFA exigé : le noyau répond 202 avec le jeton à la racine (MfaRequiredResponse :
+      // nextStep, mfaToken), pas dans `session` — sinon on partait sans session vers la console.
       const selected = await bffPostEnvelope<{
-        session?: { mfaToken?: string; accessToken?: string; sessionToken?: string };
+        mfaToken?: string;
+        session?: { accessToken?: string; sessionToken?: string };
       }>("/api/auth/select-context", {
         selectionToken,
         contextId,
         organizationId: org.organizationId,
       });
-      const pending = selected.data?.session;
-      if (pending?.mfaToken && !pending.accessToken && !pending.sessionToken) {
-        setMfaToken(pending.mfaToken);
+      const pendingMfaToken = selected.data?.mfaToken;
+      const session = selected.data?.session;
+      if (pendingMfaToken) {
+        setMfaToken(pendingMfaToken);
+        setPendingOrganizationId(org.organizationId);
         toast.success(t.auth.mfaCodeSent);
         // La session confirmée par le code sera déjà scopée à cette organisation : on ira à la console.
         hardNavigate(`${buildMfaPath(returnTo)}&next=console`);
         return;
+      }
+      if (!session?.accessToken && !session?.sessionToken) {
+        throw new Error(t.auth.invalidLoginResponse);
       }
       clearSensitive();
       toast.success(t.organizations.selected);
