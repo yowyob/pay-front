@@ -172,7 +172,7 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
       if (!normalizedSearch) return true;
       const haystack = [
         formatActivityType(item, t),
-        item.detail,
+        formatActivityDetail(item, t),
         item.reference,
         item.status,
       ]
@@ -194,7 +194,10 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
   const pageStart = (currentPage - 1) * pageSize;
   const pagedActivity = filteredActivity.slice(pageStart, pageStart + pageSize);
 
-  const walletLabel = walletName?.trim() || t.wallet.defaultName;
+  // « org:<uuid> » est le nom technique d'un portefeuille d'organisation créé à la recharge.
+  const readableName = walletName?.trim();
+  const walletLabel =
+    readableName && !readableName.startsWith("org:") ? readableName : t.wallet.defaultName;
   const hasFiltersApplied =
     statusFilter !== "all" ||
     directionFilter !== "all" ||
@@ -475,7 +478,7 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
                             </Badge>
                           </td>
                           <td className="yypay:py-3 yypay:max-w-xs yypay:truncate yypay:text-secondary">
-                            {formatActivityDetail(item)}
+                            {formatActivityDetail(item, t)}
                           </td>
                         </tr>
                       );
@@ -522,7 +525,7 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
                         {date} - {time}
                       </p>
                       <p className="yypay:mt-1 yypay:truncate yypay:text-xs yypay:text-secondary">
-                        {formatActivityDetail(item)}
+                        {formatActivityDetail(item, t)}
                       </p>
                     </div>
                   );

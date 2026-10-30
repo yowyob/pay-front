@@ -10,9 +10,10 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { bffPost } from "@/lib/bff-client";
+import { useLocale } from "@/i18n/locale-provider";
+import { bffGet, bffPost } from "@/lib/bff-client";
 import { Banknote, ShieldCheck } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 type MoneyWithdrawalCardProps = {
@@ -42,6 +43,10 @@ export function MoneyWithdrawalCard({
   currency,
   onDone,
 }: MoneyWithdrawalCardProps) {
+  const { t } = useLocale();
+  // Retrait fermé tant que le versement du prestataire n'est pas configuré côté noyau : on le dit
+  // au lieu d'envoyer un code qui mènerait au même refus. Inconnu (null) : formulaire affiché.
+  const [available, setAvailable] = useState<boolean | null>(null);
   const [amount, setAmount] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [recipientName, setRecipientName] = useState("");
@@ -49,6 +54,20 @@ export function MoneyWithdrawalCard({
   const [challenge, setChallenge] = useState<ChallengeResponse | null>(null);
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    bffGet<{ available?: boolean }>("/api/payments/withdrawals/availability")
+      .then((result) => {
+        if (!cancelled) setAvailable(result?.available !== false);
+      })
+      .catch(() => {
+        if (!cancelled) setAvailable(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const canRequest =
     Boolean(walletId) &&
@@ -65,11 +84,9 @@ export function MoneyWithdrawalCard({
         { amount: Number(amount), phoneNumber: phoneNumber.trim() },
       );
       setChallenge(result);
-      toast.success("Un code de validation vous a été envoyé.");
+      toast.success(t.walletOps.codeSent);
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Impossible d'envoyer le code",
-      );
+      toast.error(error instanceof Error ? error.message : t.walletOps.sendCodeError);
     } finally {
       setBusy(false);
     }
@@ -88,13 +105,11 @@ export function MoneyWithdrawalCard({
         challengeToken: challenge.challengeToken,
         code: code.trim(),
       });
-      toast.success("Retrait envoyé.");
+      toast.success(t.walletOps.withdrawalSuccess);
       reset();
       onDone?.();
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Le retrait a échoué",
-      );
+      toast.error(error instanceof Error ? error.message : t.walletOps.withdrawalError);
     } finally {
       setBusy(false);
     }
@@ -112,17 +127,21 @@ export function MoneyWithdrawalCard({
     <Card>
       <CardHeader>
         <CardTitle className="yypay:flex yypay:items-center yypay:gap-2">
-          <Banknote className="yypay:h-5 yypay:w-5" />
-          Retirer de l&apos;argent
+          <Banknote className="yypay:h-5 yypay:w-5" aria-hidden="true" />
+          {t.walletOps.withdrawalTitle}
         </CardTitle>
-        <CardDescription>
-          Vers votre compte mobile money. Le nom du titulaire est vérifié avant
-          l&apos;envoi.
-        </CardDescription>
+        <CardDescription>{t.walletOps.withdrawalDescription}</CardDescription>
       </CardHeader>
+      {available === false ? (
+        <CardContent>
+          <p className="yypay:rounded-lg yypay:border yypay:border-border yypay:bg-muted/40 yypay:p-3 yypay:text-sm yypay:text-muted-foreground">
+            {t.walletOps.withdrawalUnavailable}
+          </p>
+        </CardContent>
+      ) : (
       <CardContent className="yypay:space-y-4">
         <div className="yypay:space-y-2">
-          <Label htmlFor="withdraw-amount">Montant</Label>
+          <Label htmlFor="withdraw-amount">{t.walletOps.amount}</Label>
           <Input
             id="withdraw-amount"
             type="number"
@@ -134,7 +153,7 @@ export function MoneyWithdrawalCard({
         </div>
 
         <div className="yypay:space-y-2">
-          <Label htmlFor="withdraw-method">Opérateur</Label>
+          <Label htmlFor="withdraw-method">{t.walletOps.withdrawalOperator}</Label>
           <select
             id="withdraw-method"
             value={method}
@@ -151,7 +170,7 @@ export function MoneyWithdrawalCard({
         </div>
 
         <div className="yypay:space-y-2">
-          <Label htmlFor="withdraw-phone">Numéro du bénéficiaire</Label>
+          <Label htmlFor="withdraw-phone">{t.walletOps.withdrawalPhone}</Label>
           <Input
             id="withdraw-phone"
             inputMode="tel"
@@ -163,46 +182,49 @@ export function MoneyWithdrawalCard({
         </div>
 
         <div className="yypay:space-y-2">
-          <Label htmlFor="withdraw-name">Nom du titulaire</Label>
+          <Label htmlFor="withdraw-name">{t.walletOps.withdrawalHolder}</Label>
           <Input
             id="withdraw-name"
             value={recipientName}
             disabled={Boolean(challenge) || busy}
             onChange={(event) => setRecipientName(event.target.value)}
-            placeholder="Tel qu'enregistré chez l'opérateur"
+            placeholder={t.walletOps.withdrawalHolderPlaceholder}
           />
         </div>
 
         {challenge ? (
           <div className="yypay:space-y-3 yypay:rounded-lg yypay:border yypay:border-border yypay:p-4">
             <p className="yypay:flex yypay:items-center yypay:gap-2 yypay:text-sm yypay:text-secondary">
-              <ShieldCheck className="yypay:h-4 yypay:w-4" />
-              Saisissez le code reçu pour confirmer.
+              <ShieldCheck className="yypay:h-4 yypay:w-4" aria-hidden="true" />
+              {t.walletOps.codeHint}
             </p>
             <Input
               value={code}
               inputMode="numeric"
+              autoComplete="one-time-code"
+              aria-label={t.walletOps.codePlaceholder}
               onChange={(event) => setCode(event.target.value)}
-              placeholder="Code de validation"
+              placeholder={t.walletOps.codePlaceholder}
             />
             <div className="yypay:flex yypay:gap-2">
               <Button
                 onClick={confirmWithdrawal}
                 disabled={busy || code.trim().length === 0}
               >
-                Confirmer le retrait
+                {t.walletOps.withdrawalConfirm}
               </Button>
               <Button variant="outline" onClick={reset} disabled={busy}>
-                Annuler
+                {t.walletOps.cancel}
               </Button>
             </div>
           </div>
         ) : (
           <Button onClick={requestCode} disabled={!canRequest || busy}>
-            Recevoir le code de validation
+            {t.walletOps.requestCode}
           </Button>
         )}
       </CardContent>
+      )}
     </Card>
   );
 }

@@ -52,9 +52,11 @@ export function WalletCard() {
   const [rechargeDialogOpen, setRechargeDialogOpen] = useState(false);
 
   async function handleCreateWallet() {
-    const actorId = sessionContext?.actorId ?? user?.actorId;
+    // Avec une organisation active, c'est SON portefeuille qu'on crée : il paie ses achats.
+    const organizationId = sessionContext?.organizationId;
+    const ownerId = organizationId ?? sessionContext?.actorId ?? user?.actorId;
     const trimmedName = walletName.trim();
-    if (!actorId) return;
+    if (!ownerId) return;
     if (!trimmedName) {
       toast.error(t.wallet.nameRequired);
       return;
@@ -63,7 +65,8 @@ export function WalletCard() {
     setCreating(true);
     try {
       const created = await bffPost<WalletResponse>("/api/payments/wallets", {
-        ownerId: actorId,
+        ownerId,
+        ownerType: organizationId ? "ORGANIZATION" : "USER",
         ownerName: trimmedName,
       });
       setWallet(created);
@@ -116,7 +119,10 @@ export function WalletCard() {
     }
   }
 
-  const walletLabel = wallet?.ownerName?.trim() || t.wallet.defaultName;
+  // « org:<uuid> » est le nom technique d'un portefeuille d'organisation créé à la recharge.
+  const ownerName = wallet?.ownerName?.trim();
+  const walletLabel =
+    ownerName && !ownerName.startsWith("org:") ? ownerName : t.wallet.defaultName;
   const mycoolpayLabel = formatMycoolpayLabel(wallet?.ownerName);
   const intlTag = toIntlTag(locale);
 

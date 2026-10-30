@@ -25,8 +25,14 @@ export type PaymentActivityItem = {
   currency?: string;
   reference?: string;
   detail?: string;
+  /** Détail traduit à l'affichage (les libellés étaient écrits en français en dur). */
+  detailKey?: ActivityDetailKey;
+  /** Plan ou pack réglé par débit du portefeuille (sans ordre de paiement mobile money). */
+  paidFromWallet?: boolean;
   createdAt?: string;
 };
+
+type ActivityDetailKey = "rechargeCredited" | "mobileMoney" | "paidFromWallet";
 
 const SUCCESS_STATUSES = new Set([
   "SUCCESS",
@@ -92,9 +98,9 @@ export function getActivityDirection(item: PaymentActivityItem): ActivityDirecti
 }
 
 /**
- * Sources qui font bouger le solde du portefeuille. Les plans, packs et paiements passent par la
- * passerelle (mobile money) sans jamais débiter le portefeuille : les compter donnait un solde net
- * négatif (-800) face à un solde réel de 100.
+ * Sources qui font bouger le solde du portefeuille. Un plan, un pack ou un paiement réglé par la
+ * passerelle (mobile money) ne débite pas le portefeuille : le compter donnait un solde net négatif
+ * (-800) face à un solde réel de 100. Réglé par le portefeuille (`paidFromWallet`), il compte.
  */
 const WALLET_BALANCE_SOURCES = new Set<PaymentActivitySource>(["wallet", "recharge_order"]);
 
@@ -102,7 +108,7 @@ const WALLET_BALANCE_SOURCES = new Set<PaymentActivitySource>(["wallet", "rechar
 export function getActivitySignedAmount(item: PaymentActivityItem): number {
   if (
     item.amount == null ||
-    !WALLET_BALANCE_SOURCES.has(item.source) ||
+    !(WALLET_BALANCE_SOURCES.has(item.source) || item.paidFromWallet) ||
     getActivityStatusGroup(item.status) !== "success"
   ) {
     return 0;
@@ -217,17 +223,21 @@ function isTechnicalIdentifier(value: string): boolean {
  * opération auprès du support : on n'affiche donc jamais l'identifiant complet, seulement
  * un préfixe court et stable.
  */
-export function formatActivityDetail(item: PaymentActivityItem): string {
+export function formatActivityDetail(item: PaymentActivityItem, t: Messages): string {
   const detail = item.detail?.trim();
-  if (detail && !isTechnicalIdentifier(detail)) {
-    return detail;
+  const readable = detail && !isTechnicalIdentifier(detail) ? detail : undefined;
+  const label = item.detailKey ? t.transactionList.details[item.detailKey] : undefined;
+  if (label || readable) {
+    return [label, readable].filter(Boolean).join(" · ");
   }
   const reference = item.reference?.trim();
   if (!reference) {
     return "-";
   }
   const identifier = technicalIdentifier(reference);
-  return identifier ? `Réf. ${identifier.slice(0, 8).toUpperCase()}` : reference;
+  return identifier
+    ? t.transactionList.details.reference(identifier.slice(0, 8).toUpperCase())
+    : reference;
 }
 
 export function formatActivityAmount(
@@ -255,27 +265,33 @@ export function sortActivityItems(items: PaymentActivityItem[]): PaymentActivity
   );
 }
 
-/** Référence que le noyau donne au crédit d'une recharge (WalletRechargeCheckoutService). */
-const RECHARGE_CREDIT_REFERENCE_PREFIX = "wallet-recharge:";
+/**
+ * Références que le noyau donne aux mouvements du portefeuille liés à une commande, et préfixe de
+ * l'identifiant de cette commande dans l'historique : crédit d'une recharge
+ * (WalletRechargeCheckoutService), débit d'un plan ou d'un pack payé par le portefeuille.
+ */
+const ORDER_MOVEMENT_REFERENCES: { reference: string; itemPrefix: string }[] = [
+  { reference: "wallet-recharge:", itemPrefix: "recharge-" },
+  { reference: "commercial-plan:", itemPrefix: "plan-" },
+  { reference: "service-bundle:", itemPrefix: "bundle-" },
+];
 
 /**
- * Une recharge créditée apparaît deux fois : l'ordre de recharge et la transaction de crédit du
- * portefeuille. On garde l'ordre (libellé et devise lisibles) et on retire le crédit qui le double.
+ * Une recharge créditée, ou un plan payé par le portefeuille, apparaît deux fois : la commande et
+ * le mouvement du portefeuille. On garde la commande (libellé et devise lisibles) et on retire le
+ * mouvement qui la double.
  */
 export function withoutDuplicateRechargeCredits(
   items: PaymentActivityItem[],
 ): PaymentActivityItem[] {
-  const rechargeIds = new Set(
-    items
-      .filter((item) => item.source === "recharge_order")
-      .map((item) => item.id.slice("recharge-".length)),
-  );
+  const itemIds = new Set(items.map((item) => item.id));
   return items.filter((item) => {
+    if (item.source !== "wallet") return true;
     const reference = item.reference?.trim() ?? "";
-    return !(
-      item.source === "wallet" &&
-      reference.startsWith(RECHARGE_CREDIT_REFERENCE_PREFIX) &&
-      rechargeIds.has(reference.slice(RECHARGE_CREDIT_REFERENCE_PREFIX.length))
+    return !ORDER_MOVEMENT_REFERENCES.some(
+      ({ reference: prefix, itemPrefix }) =>
+        reference.startsWith(prefix) &&
+        itemIds.has(itemPrefix + reference.slice(prefix.length)),
     );
   });
 }
@@ -316,9 +332,7 @@ export function fromWalletRechargeOrder(
     currency: order.currency,
     reference: order.providerReference ?? order.paymentOrderId,
     // Jamais l'identifiant technique de la transaction : il ne dit rien à l'utilisateur.
-    detail: order.transactionId
-      ? "Rechargement crédité sur votre portefeuille"
-      : "Paiement par mobile money",
+    detailKey: order.transactionId ? "rechargeCredited" : "mobileMoney",
     createdAt: order.createdAt ?? order.updatedAt,
   };
 }
@@ -347,6 +361,11 @@ export function fromPaymentOrder(
   };
 }
 
+/** Active sans ordre de paiement : la commande a été réglée par débit du portefeuille. */
+function paidFromWallet(order: { paymentOrderId?: string; status?: string }): boolean {
+  return !order.paymentOrderId && order.status === "ACTIVE";
+}
+
 export function fromCommercialPlanOrder(
   order: CommercialPlanOrderResponse,
   organizationId?: string,
@@ -369,8 +388,9 @@ export function fromCommercialPlanOrder(
     status: order.status ?? "UNKNOWN",
     amount: order.amount,
     currency: order.currency,
-    reference: order.paymentOrderId,
+    reference: order.paymentOrderId ?? order.id,
     detail: addOns,
+    ...(paidFromWallet(order) ? { paidFromWallet: true, detailKey: "paidFromWallet" as const } : {}),
     createdAt: order.createdAt ?? order.updatedAt,
   };
 }
@@ -393,7 +413,8 @@ export function fromServiceBundleOrder(
     status: order.status ?? "UNKNOWN",
     amount: order.amount,
     currency: order.currency,
-    reference: order.paymentOrderId,
+    reference: order.paymentOrderId ?? order.id,
+    ...(paidFromWallet(order) ? { paidFromWallet: true, detailKey: "paidFromWallet" as const } : {}),
     detail: order.services?.length
       ? order.services.join(", ")
       : undefined,
