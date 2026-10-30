@@ -103,12 +103,22 @@ function LoginPageContent() {
     event.preventDefault();
     setLoading(true);
     try {
+      const toConsole = searchParams.get("next") === "console";
+      const wizard = useAuthWizardStore.getState();
       await bffPostEnvelope("/api/auth/login/mfa/confirm", {
-        mfaToken: mfaToken || useAuthWizardStore.getState().mfaToken,
+        mfaToken: mfaToken || wizard.mfaToken,
         code,
+        // Session déjà scopée à l'organisation choisie : le BFF garde son cookie au lieu de l'effacer,
+        // sinon le proxy renvoie aux organisations et un nouveau select-context redemande un code.
+        ...(toConsole && wizard.pendingOrganizationId
+          ? { organizationId: wizard.pendingOrganizationId }
+          : {}),
       });
+      if (toConsole) {
+        wizard.clearSensitive();
+      }
       toast.success(t.login.authSuccess);
-      hardNavigate(searchParams.get("next") === "console" ? consolePath(returnTo) : organizationsPath());
+      hardNavigate(toConsole ? consolePath(returnTo) : organizationsPath());
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t.login.invalidMfaCode);
     } finally {

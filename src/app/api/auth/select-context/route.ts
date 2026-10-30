@@ -44,7 +44,10 @@ export async function POST(request: Request) {
       accessToken: preservedAccessToken,
       refreshToken: sessionCookies?.refreshToken ?? requestSession.refreshToken,
       actorId: sessionCookies?.actorId ?? requestSession.actorId,
-      organizationId: contextual?.selectedOrganizationId ?? body?.organizationId,
+      // Pas de cookie d'organisation tant que le MFA n'a pas ouvert la session (réponse 202 sans session).
+      organizationId: sessionCookies
+        ? (contextual?.selectedOrganizationId ?? body?.organizationId)
+        : undefined,
       tenantId: contextual?.selectedTenantId ?? requestSession.tenantId,
       accessExpiresInSeconds: sessionCookies?.accessExpiresInSeconds,
       refreshExpiresInSeconds: sessionCookies?.refreshExpiresInSeconds,

@@ -14,11 +14,14 @@ type AuthWizardState = {
   discoverData: DiscoverLoginContextsResponse | null;
   selectedContextId: string;
   selectedTenantId: string;
+  /** Organisation choisie avant le MFA : la session confirmée y est rattachée par le noyau. */
+  pendingOrganizationId: string;
   setCredentials: (email: string, password: string) => void;
   setMfaToken: (mfaToken: string) => void;
   setSelectionToken: (selectionToken: string) => void;
   setDiscoverData: (data: DiscoverLoginContextsResponse | null) => void;
   setSelectedContext: (contextId: string, tenantId: string) => void;
+  setPendingOrganizationId: (organizationId: string) => void;
   clearSensitive: () => void;
   hasCredentials: () => boolean;
 };
@@ -33,12 +36,15 @@ export const useAuthWizardStore = create<AuthWizardState>()(
       discoverData: null,
       selectedContextId: "",
       selectedTenantId: "",
+      pendingOrganizationId: "",
       setCredentials: (email, password) => set({ email, password }),
       setMfaToken: (mfaToken) => set({ mfaToken }),
       setSelectionToken: (selectionToken) => set({ selectionToken }),
       setDiscoverData: (discoverData) => set({ discoverData }),
       setSelectedContext: (selectedContextId, selectedTenantId) =>
         set({ selectedContextId, selectedTenantId }),
+      setPendingOrganizationId: (pendingOrganizationId) =>
+        set({ pendingOrganizationId }),
       clearSensitive: () =>
         set({
           password: "",
@@ -47,6 +53,7 @@ export const useAuthWizardStore = create<AuthWizardState>()(
           discoverData: null,
           selectedContextId: "",
           selectedTenantId: "",
+          pendingOrganizationId: "",
         }),
       hasCredentials: () => Boolean(get().email && get().password),
     }),
@@ -61,6 +68,7 @@ export const useAuthWizardStore = create<AuthWizardState>()(
         discoverData: state.discoverData,
         selectedContextId: state.selectedContextId,
         selectedTenantId: state.selectedTenantId,
+        pendingOrganizationId: state.pendingOrganizationId,
       }),
     },
   ),
