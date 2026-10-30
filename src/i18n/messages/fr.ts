@@ -84,11 +84,11 @@ const fr = {
     amountLabel: "Montant (XAF)",
     rechargeVia: (provider: string) => `Recharger via ${provider}`,
     emptyState:
-      "Vous n'avez pas encore de wallet. Donnez-lui un nom pour le retrouver dans vos transactions et paiements MYCOOLPAY.",
-    createWallet: "Créer mon wallet",
-    createTitle: "Créer un wallet",
+      "L'organisation n'a pas encore de portefeuille. Créez-le pour le recharger, recevoir des transferts et payer ses plans.",
+    createWallet: "Créer le portefeuille de l'organisation",
+    createTitle: "Portefeuille de l'organisation",
     createDescription:
-      "Choisissez un nom pour identifier ce wallet dans l'historique et sur MYCOOLPAY.",
+      "Choisissez un nom pour retrouver ce portefeuille dans l'historique.",
     nameLabel: "Nom du wallet",
     namePlaceholder: "Ex. Wallet principal",
     lastUpdated: "Dernière mise à jour :",
@@ -312,7 +312,10 @@ const fr = {
     sourceOrganization: "Portefeuille de l'organisation",
     sourcePersonal: "Portefeuille personnel",
     noOrganizationWallet:
-      "L'organisation n'a pas encore de portefeuille : la première recharge le crée.",
+      "L'organisation n'a pas encore de portefeuille. Créez-le pour y transférer de l'argent, ou rechargez-le directement.",
+    createOrganizationWallet: "Créer le portefeuille de l'organisation",
+    organizationWalletName: "Portefeuille de l'organisation",
+    createError: "Création du portefeuille impossible",
     rechargeTitle: "Recharger",
     amountPlaceholder: "Montant (XAF)",
     rechargeCta: "Recharger",
