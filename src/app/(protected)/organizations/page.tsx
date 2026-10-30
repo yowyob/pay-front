@@ -12,8 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLocale } from "@/i18n/locale-provider";
-import { bffGet, bffPost, bffPostEnvelope } from "@/lib/bff-client";
-import { performLogin } from "@/lib/auth-login-flow";
+import { bffGet, bffPostEnvelope } from "@/lib/bff-client";
 import {
   consolePath,
   hardNavigate,
