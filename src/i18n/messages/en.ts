@@ -86,11 +86,11 @@ const en: Messages = {
     amountLabel: "Amount (XAF)",
     rechargeVia: (provider: string) => `Top up via ${provider}`,
     emptyState:
-      "You don't have a wallet yet. Give it a name to find it in your transactions and MYCOOLPAY payments.",
-    createWallet: "Create my wallet",
-    createTitle: "Create a wallet",
+      "The organization has no wallet yet. Create it to top it up, receive transfers and pay for its plans.",
+    createWallet: "Create the organization's wallet",
+    createTitle: "Organization wallet",
     createDescription:
-      "Choose a name to identify this wallet in your history and on MYCOOLPAY.",
+      "Choose a name to find this wallet in the history.",
     nameLabel: "Wallet name",
     namePlaceholder: "e.g. Main wallet",
     lastUpdated: "Last updated:",
@@ -314,7 +314,10 @@ const en: Messages = {
     sourceOrganization: "Organization wallet",
     sourcePersonal: "Personal wallet",
     noOrganizationWallet:
-      "The organization has no wallet yet: the first top-up creates it.",
+      "The organization has no wallet yet. Create it to transfer money to it, or top it up directly.",
+    createOrganizationWallet: "Create the organization's wallet",
+    organizationWalletName: "Organization wallet",
+    createError: "Could not create the wallet",
     rechargeTitle: "Top up",
     amountPlaceholder: "Amount (XAF)",
     rechargeCta: "Top up",

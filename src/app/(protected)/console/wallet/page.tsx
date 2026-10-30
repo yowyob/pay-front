@@ -69,6 +69,7 @@ export default function WalletPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
 
   const organizationId = sessionContext?.organizationId ?? null;
   const balance = Number(wallet?.balance ?? 0);
@@ -89,6 +90,25 @@ export default function WalletPage() {
       ? [{ id: personalWallet.id, label: t.walletOps.sourcePersonal }]
       : []),
   ];
+
+  // Sans portefeuille d'organisation, on ne pouvait rien y transférer : seule une recharge mobile
+  // money le créait. Le créer ne déplace aucun argent (création idempotente côté noyau).
+  async function createOrganizationWallet() {
+    if (!organizationId) return;
+    setCreating(true);
+    try {
+      await bffPost("/api/payments/wallets", {
+        ownerId: organizationId,
+        ownerType: "ORGANIZATION",
+        ownerName: t.walletOps.organizationWalletName,
+      });
+      await refreshWallet();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : t.walletOps.createError);
+    } finally {
+      setCreating(false);
+    }
+  }
 
   async function recharge() {
     const value = Number(amount);
@@ -140,9 +160,16 @@ export default function WalletPage() {
           {wallet?.id ? (
             <WalletIdentifier walletId={wallet.id} />
           ) : !walletLoading ? (
-            <p className="yypay:mt-2 yypay:text-sm yypay:text-muted-foreground">
-              {t.walletOps.noOrganizationWallet}
-            </p>
+            <div className="yypay:mt-2 yypay:space-y-3">
+              <p className="yypay:text-sm yypay:text-muted-foreground">
+                {t.walletOps.noOrganizationWallet}
+              </p>
+              {organizationId ? (
+                <Button onClick={createOrganizationWallet} disabled={creating}>
+                  {t.walletOps.createOrganizationWallet}
+                </Button>
+              ) : null}
+            </div>
           ) : null}
         </Card>
 
