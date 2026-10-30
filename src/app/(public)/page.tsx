@@ -130,7 +130,7 @@ export default function LandingPage() {
                         <span className="yypay:flex yypay:h-10 yypay:w-10 yypay:items-center yypay:justify-center yypay:rounded-lg yypay:bg-primary/10 yypay:text-primary">
                           <Icon className="yypay:h-5 yypay:w-5" />
                         </span>
-                        <span className="yypay:text-sm yypay:font-semibold yypay:text-muted-foreground/60">
+                        <span className="yypay:text-sm yypay:font-semibold yypay:text-muted-foreground">
                           {String(index + 1).padStart(2, "0")}
                         </span>
                       </div>

@@ -12,8 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLocale } from "@/i18n/locale-provider";
-import { bffGet, bffPost, bffPostEnvelope } from "@/lib/bff-client";
-import { performLogin } from "@/lib/auth-login-flow";
+import { bffGet, bffPostEnvelope } from "@/lib/bff-client";
 import {
   consolePath,
   hardNavigate,
@@ -279,27 +278,27 @@ function OrganizationsPageContent() {
   async function handleSelect(org: OrgOption) {
     setSelecting(org.organizationId);
     try {
-      const session = await bffGet<{ authenticated?: boolean }>(
-        "/api/session/context",
-      );
-
-      if (!session.authenticated && hasCredentials()) {
-        const loginResult = await performLogin(email, password, t);
-        if (loginResult.kind === "mfa_required") {
-          setMfaToken(loginResult.mfaToken);
-          toast.success(t.auth.mfaCodeSent);
-          hardNavigate(buildMfaPath(returnTo));
-          return;
-        }
-      }
-
+      // Ordre voulu par le noyau : tenant, puis organisation, puis UN select-context, puis le MFA.
+      // Se connecter d'abord (au choix du tenant) puis rappeler select-context avec le jeton de
+      // sélection d'origine redemandait un code MFA juste après le premier — bloqué par la limite
+      // d'envoi (« A code was already sent recently »).
       const { selectionToken, contextId } = await resolveSelectionContext(org);
 
-      await bffPost("/api/auth/select-context", {
+      const selected = await bffPostEnvelope<{
+        session?: { mfaToken?: string; accessToken?: string; sessionToken?: string };
+      }>("/api/auth/select-context", {
         selectionToken,
         contextId,
         organizationId: org.organizationId,
       });
+      const pending = selected.data?.session;
+      if (pending?.mfaToken && !pending.accessToken && !pending.sessionToken) {
+        setMfaToken(pending.mfaToken);
+        toast.success(t.auth.mfaCodeSent);
+        // La session confirmée par le code sera déjà scopée à cette organisation : on ira à la console.
+        hardNavigate(`${buildMfaPath(returnTo)}&next=console`);
+        return;
+      }
       clearSensitive();
       toast.success(t.organizations.selected);
       hardNavigate(consolePath(returnTo));

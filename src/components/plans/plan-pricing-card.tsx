@@ -183,7 +183,7 @@ export function PlanPricingCard({
 
         <Button
           type="button"
-          className="yypay:mt-6 yypay:h-11 yypay:w-full yypay:text-sm yypay:font-semibold"
+          className="yypay:mt-6 yypay:h-auto yypay:min-h-11 yypay:w-full yypay:whitespace-normal yypay:py-2 yypay:text-center yypay:text-sm yypay:font-semibold"
           variant={highlighted && !isActivePlan ? "default" : "outline"}
           disabled={ctaDisabled}
           onClick={onSelect}

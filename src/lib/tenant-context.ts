@@ -13,11 +13,20 @@ export type TenantOption = {
   subtitle?: string;
 };
 
-function shortTenantId(tenantId: string): string {
-  return tenantId.length > 8 ? `${tenantId.slice(0, 8)}…` : tenantId;
-}
+/** Le noyau renvoie un nom lisible (label) et un type (kind) ; les types générés ne les ont pas encore. */
+type LabelledContext = DiscoveredLoginContextResponse & { label?: string; kind?: string };
+
+const KIND_LABELS: Record<string, string> = {
+  PLATFORM: "Plateforme",
+  OWN_SPACE: "Mon espace",
+  SHARED_SPACE: "Espace partagé",
+};
 
 function buildTenantLabel(context: DiscoveredLoginContextResponse): string {
+  const named = (context as LabelledContext).label?.trim();
+  if (named) {
+    return named;
+  }
   const firstOrg = context.organizations?.[0];
   if (firstOrg?.displayName?.trim()) {
     return firstOrg.displayName;
@@ -28,10 +37,9 @@ function buildTenantLabel(context: DiscoveredLoginContextResponse): string {
   if (firstOrg?.organizationCode?.trim()) {
     return firstOrg.organizationCode;
   }
-  if (context.tenantId) {
-    return `Tenant ${shortTenantId(context.tenantId)}`;
-  }
-  return "Tenant";
+  // Jamais d'identifiant à l'écran : à défaut de nom, le type d'espace.
+  const kind = (context as LabelledContext).kind;
+  return (kind && KIND_LABELS[kind]) || "Espace sans nom";
 }
 
 export function mapDiscoverToTenantOptions(

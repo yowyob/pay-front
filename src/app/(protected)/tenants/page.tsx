@@ -90,6 +90,12 @@ function TenantsPageContent() {
       if (selectionToken) {
         setSelectionToken(selectionToken);
       }
+      // Avec des organisations, on les choisit AVANT de s'authentifier : un seul select-context,
+      // un seul code MFA (voir la page des organisations).
+      if (option.organizationCount > 0) {
+        hardNavigate(buildOrganizationsPath(returnTo));
+        return;
+      }
       await authenticateAfterTenantSelection();
     } catch (error) {
       toast.error(

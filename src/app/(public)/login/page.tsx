@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 
 import { useLocale } from "@/i18n/locale-provider";
 import {
+    consolePath,
     organizationsPath as buildOrganizationsPath,
     tenantsPath as buildTenantsPath,
     hardNavigate,
@@ -107,7 +108,7 @@ function LoginPageContent() {
         code,
       });
       toast.success(t.login.authSuccess);
-      hardNavigate(organizationsPath());
+      hardNavigate(searchParams.get("next") === "console" ? consolePath(returnTo) : organizationsPath());
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t.login.invalidMfaCode);
     } finally {

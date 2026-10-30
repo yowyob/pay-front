@@ -226,7 +226,7 @@ const en: Messages = {
       paymentInProgress: "Payment in progress",
       inCart: "In cart",
       calculatingPrice: "Calculating price…",
-      quoteUnavailable: "Quote unavailable",
+      quoteUnavailable: "Price coming soon",
       finalizePayment:
         "Finish the ongoing MYCOOLPAY payment before starting a new one.",
       addOnPrefix: "Add-on:",
