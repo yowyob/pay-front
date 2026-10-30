@@ -6,6 +6,7 @@ import {
     fromWalletTransaction,
     sortActivityItems,
     unwrapApiList,
+    withoutDuplicateRechargeCredits,
     type PaymentActivityItem,
 } from "@/lib/payment-activity";
 import { getSessionFromRequest } from "@/lib/session-cookies";
@@ -22,6 +23,9 @@ type ApiResponseListServiceBundleOrderResponse =
   components["schemas"]["ApiResponseListServiceBundleOrderResponse"];
 
 const DEFAULT_LIMIT = 50;
+// Les transactions du portefeuille ne portent pas de devise : le portefeuille est tenu en XAF
+// (même hypothèse que la carte du solde et la page du portefeuille).
+const WALLET_CURRENCY = "XAF";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -68,7 +72,7 @@ export async function GET(request: Request) {
       | ApiResponseListTransactionResponse
       | undefined;
     for (const transaction of unwrapApiList(payload)) {
-      const item = fromWalletTransaction(transaction);
+      const item = fromWalletTransaction(transaction, WALLET_CURRENCY);
       if (item) {
         activity.push(item);
       }
@@ -115,7 +119,7 @@ export async function GET(request: Request) {
     }
   }
 
-  const sorted = sortActivityItems(activity);
+  const sorted = sortActivityItems(withoutDuplicateRechargeCredits(activity));
   const data = Number.isNaN(limit) ? sorted : sorted.slice(0, limit);
 
   return NextResponse.json({

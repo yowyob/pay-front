@@ -212,7 +212,7 @@ export function WalletCard() {
         ) : (
           <div>
             <p className="yypay:text-3xl yypay:font-bold yypay:text-foreground">
-              {wallet.balance?.toLocaleString(intlTag) ?? 0}
+              {wallet.balance?.toLocaleString(intlTag) ?? 0} XAF
             </p>
             <p className="yypay:mt-2 yypay:text-sm yypay:text-secondary">
               {t.wallet.lastUpdated}{" "}
