@@ -91,9 +91,20 @@ export function getActivityDirection(item: PaymentActivityItem): ActivityDirecti
   }
 }
 
-/** Montant compte dans les totaux : uniquement les operations reussies. */
+/**
+ * Sources qui font bouger le solde du portefeuille. Les plans, packs et paiements passent par la
+ * passerelle (mobile money) sans jamais débiter le portefeuille : les compter donnait un solde net
+ * négatif (-800) face à un solde réel de 100.
+ */
+const WALLET_BALANCE_SOURCES = new Set<PaymentActivitySource>(["wallet", "recharge_order"]);
+
+/** Montant compte dans les totaux : les operations reussies qui touchent le solde du portefeuille. */
 export function getActivitySignedAmount(item: PaymentActivityItem): number {
-  if (item.amount == null || getActivityStatusGroup(item.status) !== "success") {
+  if (
+    item.amount == null ||
+    !WALLET_BALANCE_SOURCES.has(item.source) ||
+    getActivityStatusGroup(item.status) !== "success"
+  ) {
     return 0;
   }
   return getActivityDirection(item) === "in" ? item.amount : -item.amount;
@@ -167,7 +178,7 @@ function humanizeCode(code: string): string {
 export function formatActivityType(item: PaymentActivityItem, t: Messages): string {
   switch (item.source) {
     case "wallet":
-      return item.type;
+      return humanizeCode(item.type);
     case "recharge_order":
       return t.transactionList.types.rechargeWallet;
     case "payment_order":
@@ -188,8 +199,15 @@ export function formatActivityType(item: PaymentActivityItem, t: Messages): stri
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/** Un UUID, éventuellement préfixé (« wallet-recharge:<uuid> »). */
+function technicalIdentifier(value: string): string | null {
+  const trimmed = value.trim();
+  const candidate = trimmed.slice(trimmed.lastIndexOf(":") + 1);
+  return UUID_PATTERN.test(candidate) ? candidate : null;
+}
+
 function isTechnicalIdentifier(value: string): boolean {
-  return UUID_PATTERN.test(value.trim());
+  return technicalIdentifier(value) !== null;
 }
 
 /**
@@ -208,9 +226,8 @@ export function formatActivityDetail(item: PaymentActivityItem): string {
   if (!reference) {
     return "-";
   }
-  return isTechnicalIdentifier(reference)
-    ? `Réf. ${reference.slice(0, 8).toUpperCase()}`
-    : reference;
+  const identifier = technicalIdentifier(reference);
+  return identifier ? `Réf. ${identifier.slice(0, 8).toUpperCase()}` : reference;
 }
 
 export function formatActivityAmount(
@@ -238,8 +255,34 @@ export function sortActivityItems(items: PaymentActivityItem[]): PaymentActivity
   );
 }
 
+/** Référence que le noyau donne au crédit d'une recharge (WalletRechargeCheckoutService). */
+const RECHARGE_CREDIT_REFERENCE_PREFIX = "wallet-recharge:";
+
+/**
+ * Une recharge créditée apparaît deux fois : l'ordre de recharge et la transaction de crédit du
+ * portefeuille. On garde l'ordre (libellé et devise lisibles) et on retire le crédit qui le double.
+ */
+export function withoutDuplicateRechargeCredits(
+  items: PaymentActivityItem[],
+): PaymentActivityItem[] {
+  const rechargeIds = new Set(
+    items
+      .filter((item) => item.source === "recharge_order")
+      .map((item) => item.id.slice("recharge-".length)),
+  );
+  return items.filter((item) => {
+    const reference = item.reference?.trim() ?? "";
+    return !(
+      item.source === "wallet" &&
+      reference.startsWith(RECHARGE_CREDIT_REFERENCE_PREFIX) &&
+      rechargeIds.has(reference.slice(RECHARGE_CREDIT_REFERENCE_PREFIX.length))
+    );
+  });
+}
+
 export function fromWalletTransaction(
   transaction: TransactionResponse,
+  currency?: string,
 ): PaymentActivityItem | null {
   if (!transaction.id) {
     return null;
@@ -251,6 +294,7 @@ export function fromWalletTransaction(
     type: transaction.type ?? "TRANSACTION",
     status: transaction.status ?? "UNKNOWN",
     amount: transaction.amount,
+    currency,
     reference: transaction.reference,
     createdAt: transaction.createdAt,
   };
