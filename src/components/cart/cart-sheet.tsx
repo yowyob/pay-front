@@ -1,6 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import {
     Sheet,
@@ -13,8 +15,7 @@ import {
 } from "@/components/ui/sheet";
 import { toIntlTag } from "@/i18n/format";
 import { useLocale } from "@/i18n/locale-provider";
-import { bffGet, bffPost } from "@/lib/bff-client";
-import { COMMERCIAL_PLAN_ORDER_STORAGE_KEY } from "@/lib/bundle-constants";
+import { BffError, bffGet, bffPost } from "@/lib/bff-client";
 import {
     formatBillingPeriodLabel,
     getPlanLabel,
@@ -25,15 +26,13 @@ import {
     getPendingPlanCodes,
 } from "@/lib/plan-subscription";
 import { cn } from "@/lib/utils";
-import { formatMycoolpayLabel } from "@/lib/wallet-labels";
 import { useCartStore } from "@/stores/cart-store";
 import type { components } from "@/types/schemas-payment";
-import { CreditCard, Loader2, Trash2, Wallet } from "lucide-react";
+import { Loader2, Trash2, Wallet } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
-type CommercialPlanCheckoutResponse =
-  components["schemas"]["CommercialPlanCheckoutResponse"];
 type CommercialPlanQuoteResponse =
   components["schemas"]["CommercialPlanQuoteResponse"];
 type CommercialPlanResponse = components["schemas"]["CommercialPlanResponse"];
@@ -58,13 +57,22 @@ type SessionContext = {
   walletId: string | null;
 };
 
-function createCartIdempotencyKey(planCode: string) {
-  return `cart-${planCode}-${crypto.randomUUID()}`;
-}
+/** Réponse du noyau à la demande de code (achat par le portefeuille, étape 1). */
+type WalletCheckoutChallenge = {
+  checkoutId: string;
+  amount: number;
+  currency: string;
+  challengeToken: string;
+  expiresInSeconds: number;
+  codePreview?: string | null;
+};
 
-function redirectToPayment(url: string) {
-  globalThis.location.assign(url);
-}
+/** Achat en attente de son code : le plan et ses options sont figés jusqu'à la confirmation. */
+type PendingWalletCheckout = WalletCheckoutChallenge & {
+  planCode: string;
+  addOnCodes: string[];
+  billingPeriod: BillingPeriod;
+};
 
 type CartSheetProps = {
   trigger: ReactNode;
@@ -84,16 +92,18 @@ function useIsMobile() {
   return isMobile;
 }
 
-export function CartSheet({ trigger, walletName, onCheckoutComplete }: CartSheetProps) {
+export function CartSheet({ trigger, onCheckoutComplete }: CartSheetProps) {
   const { t, locale } = useLocale();
   const intlTag = toIntlTag(locale);
   const [open, setOpen] = useState(false);
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>("MONTHLY");
   const [quote, setQuote] = useState<AggregatedQuote | null>(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
-  const [checkingOut, setCheckingOut] = useState<"wallet" | "mycoolpay" | null>(
+  const [checkingOut, setCheckingOut] = useState<"challenge" | "confirm" | null>(
     null,
   );
+  const [pending, setPending] = useState<PendingWalletCheckout | null>(null);
+  const [code, setCode] = useState("");
   const [purchaseBlockMessage, setPurchaseBlockMessage] = useState<string | null>(
     null,
   );
@@ -117,7 +127,6 @@ export function CartSheet({ trigger, walletName, onCheckoutComplete }: CartSheet
 
   const quoteTotal = quote?.total ?? 0;
   const quoteCurrency = quote?.currency ?? "XAF";
-  const mycoolpayLabel = formatMycoolpayLabel(walletName);
 
   useEffect(() => {
     if (!open || items.length === 0) {
@@ -273,113 +282,76 @@ export function CartSheet({ trigger, walletName, onCheckoutComplete }: CartSheet
     return bffGet<SessionContext>("/api/session/context");
   }
 
-  async function handleWalletCheckout() {
-    if (items.length === 0) return;
-    if (!assertCheckoutAllowed()) return;
-    setCheckingOut("wallet");
-    try {
-      const context = await getSessionContext();
-      if (!context.organizationId) {
-        throw new Error(t.cart.orgNotSelected);
+  /** Message lisible pour les refus attendus du noyau (solde, portefeuille, code). */
+  function checkoutErrorMessage(error: unknown): string {
+    if (error instanceof BffError) {
+      switch (error.errorCode) {
+        case "PAYMENT_INSUFFICIENT_BALANCE":
+          return t.cart.insufficientBalance;
+        case "PAYMENT_WALLET_NOT_FOUND":
+          return t.cart.noWallet;
+        case "PAYMENT_MFA_REQUIRED":
+          return t.cart.invalidCode;
       }
-      if (!context.walletId) {
-        throw new Error(t.cart.noWallet);
-      }
-      if (!quoteTotal) {
-        throw new Error(t.cart.quoteUnavailable);
-      }
-
-      const canOperate = await bffGet<boolean>(
-        `/api/payments/wallets/${context.walletId}/can-operate?amount=${quoteTotal}`,
-      );
-      if (!canOperate) {
-        toast.error(t.cart.insufficientBalance);
-        return;
-      }
-
-      const failures: string[] = [];
-      for (const item of items) {
-        if (!item.plan.code) continue;
-        try {
-          await bffPost(`/api/plans/${item.plan.code}/purchase`, {
-            organizationId: context.organizationId,
-          });
-        } catch (error) {
-          failures.push(
-            getPlanLabel(item.plan, t) ??
-              (error instanceof Error ? error.message : t.cart.unknownError),
-          );
-        }
-      }
-
-      if (failures.length > 0) {
-        toast.error(t.cart.partialFailure(failures.join(", ")));
-      } else {
-        toast.success(t.cart.walletPaymentSuccess);
-      }
-
-      clearCart();
-      setOpen(false);
-      onCheckoutComplete?.();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : t.cart.walletPaymentError);
-    } finally {
-      setCheckingOut(null);
     }
+    return error instanceof Error ? error.message : t.cart.walletPaymentError;
   }
 
-  async function handleMycoolpayCheckout() {
-    if (items.length === 0) return;
+  // Tout achat Yowyob se paie par débit du portefeuille de l'organisation : le noyau vérifie le
+  // solde et envoie un code, puis débite et active le plan d'un seul tenant à la confirmation.
+  async function handleRequestCode() {
+    if (items.length !== 1) return;
     if (!assertCheckoutAllowed()) return;
-    if (items.length > 1) {
-      toast.error(t.cart.mycoolpaySingleLimit);
-      return;
-    }
-
-    const cartItem = items[0];
-    const planCode = cartItem?.plan.code;
+    const item = items[0];
+    const planCode = item?.plan.code;
     if (!planCode) {
       toast.error(t.cart.invalidPlanInCart);
       return;
     }
 
-    setCheckingOut("mycoolpay");
+    setCheckingOut("challenge");
     try {
       const context = await getSessionContext();
       if (!context.organizationId) {
         throw new Error(t.cart.orgNotSelected);
       }
+      const challenge = await bffPost<WalletCheckoutChallenge>(
+        `/api/commercial-plans/${encodeURIComponent(planCode)}/wallet-checkout/challenge`,
+        { addOnCodes: item.addOnCodes, billingPeriod },
+      );
+      setPending({ ...challenge, planCode, addOnCodes: item.addOnCodes, billingPeriod });
+      setCode("");
+      toast.success(t.cart.codeSent);
+    } catch (error) {
+      toast.error(checkoutErrorMessage(error));
+    } finally {
+      setCheckingOut(null);
+    }
+  }
 
-      const checkout = await bffPost<CommercialPlanCheckoutResponse>(
-        `/api/plans/${planCode}/checkout`,
+  async function handleConfirm(event: React.FormEvent) {
+    event.preventDefault();
+    if (!pending || !code.trim()) return;
+    setCheckingOut("confirm");
+    try {
+      await bffPost(
+        `/api/commercial-plans/${encodeURIComponent(pending.planCode)}/wallet-checkout`,
         {
-          organizationId: context.organizationId,
-          addOnCodes: cartItem.addOnCodes,
-          billingPeriod,
-          provider: "MYCOOLPAY",
-          method: "MOBILE_MONEY",
-          idempotencyKey: createCartIdempotencyKey(planCode),
+          checkoutId: pending.checkoutId,
+          addOnCodes: pending.addOnCodes,
+          billingPeriod: pending.billingPeriod,
+          challengeToken: pending.challengeToken,
+          code: code.trim(),
         },
       );
-
-      if (checkout.orderId) {
-        sessionStorage.setItem(
-          COMMERCIAL_PLAN_ORDER_STORAGE_KEY,
-          checkout.orderId,
-        );
-      }
-
-      if (checkout.redirectUrl) {
-        clearCart();
-        redirectToPayment(checkout.redirectUrl);
-        return;
-      }
-
-      toast.error(t.cart.mycoolpayRedirectMissing);
+      toast.success(t.cart.walletPaymentSuccess);
+      setPending(null);
+      setCode("");
+      clearCart();
+      setOpen(false);
+      onCheckoutComplete?.();
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : t.cart.mycoolpayPaymentError,
-      );
+      toast.error(checkoutErrorMessage(error));
     } finally {
       setCheckingOut(null);
     }
@@ -519,48 +491,81 @@ export function CartSheet({ trigger, walletName, onCheckoutComplete }: CartSheet
             <Separator />
             <SheetFooter>
               <div className="yypay:flex yypay:w-full yypay:flex-col yypay:gap-4">
-                <Button
-                  onClick={handleWalletCheckout}
-                  disabled={
-                    checkingOut !== null ||
-                    quoteLoading ||
-                    guardLoading ||
-                    !quote ||
-                    Boolean(purchaseBlockMessage)
-                  }
-                  className="yypay:w-full"
-                >
-                  {checkingOut === "wallet" ? (
-                    <Loader2 className="yypay:h-4 yypay:w-4 yypay:animate-spin" />
-                  ) : (
-                    <Wallet className="yypay:h-4 yypay:w-4" />
-                  )}
-                  {t.cart.payViaWallet}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleMycoolpayCheckout}
-                  disabled={
-                    checkingOut !== null ||
-                    quoteLoading ||
-                    guardLoading ||
-                    !quote ||
-                    items.length > 1 ||
-                    Boolean(purchaseBlockMessage)
-                  }
-                  className="yypay:w-full"
-                >
-                  {checkingOut === "mycoolpay" ? (
-                    <Loader2 className="yypay:h-4 yypay:w-4 yypay:animate-spin" />
-                  ) : (
-                    <CreditCard className="yypay:h-4 yypay:w-4" />
-                  )}
-                  {t.cart.payVia(mycoolpayLabel)}
-                </Button>
-                {items.length > 1 && (
-                  <p className="yypay:pt-1 yypay:text-center yypay:text-xs yypay:text-secondary">
-                    {t.cart.mycoolpaySingleWarning}
-                  </p>
+                {pending ? (
+                  <form onSubmit={handleConfirm} className="yypay:space-y-3">
+                    <p className="yypay:text-sm yypay:text-secondary">
+                      {t.cart.codeHint(
+                        pending.amount.toLocaleString(intlTag),
+                        pending.currency,
+                      )}
+                    </p>
+                    <div className="yypay:space-y-2">
+                      <Label htmlFor="cart-wallet-code">{t.cart.codeLabel}</Label>
+                      <Input
+                        id="cart-wallet-code"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        value={code}
+                        onChange={(event) => setCode(event.target.value)}
+                        placeholder={pending.codePreview ?? undefined}
+                        autoFocus
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      className="yypay:w-full"
+                      disabled={checkingOut !== null || !code.trim()}
+                    >
+                      {checkingOut === "confirm" && (
+                        <Loader2 className="yypay:h-4 yypay:w-4 yypay:animate-spin" />
+                      )}
+                      {t.cart.confirmPayment}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="yypay:w-full"
+                      disabled={checkingOut !== null}
+                      onClick={() => {
+                        setPending(null);
+                        setCode("");
+                      }}
+                    >
+                      {t.cart.cancel}
+                    </Button>
+                  </form>
+                ) : (
+                  <>
+                    <Button
+                      onClick={handleRequestCode}
+                      disabled={
+                        checkingOut !== null ||
+                        quoteLoading ||
+                        guardLoading ||
+                        !quote ||
+                        items.length !== 1 ||
+                        Boolean(purchaseBlockMessage)
+                      }
+                      className="yypay:w-full"
+                    >
+                      {checkingOut === "challenge" ? (
+                        <Loader2 className="yypay:h-4 yypay:w-4 yypay:animate-spin" />
+                      ) : (
+                        <Wallet className="yypay:h-4 yypay:w-4" />
+                      )}
+                      {t.cart.payViaWallet}
+                    </Button>
+                    <p className="yypay:text-center yypay:text-xs yypay:text-secondary">
+                      {items.length > 1 ? t.cart.onePlanAtATime : t.cart.walletOnlyNote}{" "}
+                      <Link
+                        href="/console/wallet"
+                        className="yypay:font-medium yypay:text-primary yypay:underline-offset-4 yypay:hover:underline"
+                        onClick={() => setOpen(false)}
+                      >
+                        {t.cart.rechargeWallet}
+                      </Link>
+                    </p>
+                  </>
                 )}
               </div>
             </SheetFooter>

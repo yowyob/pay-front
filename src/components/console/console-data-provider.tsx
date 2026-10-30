@@ -24,7 +24,10 @@ type SessionContext = {
 type ConsoleData = {
   user: UserAccountResponse | null;
   sessionContext: SessionContext | null;
+  /** Portefeuille de l'organisation active : celui qu'on recharge et qui paie ses achats. */
   wallet: WalletResponse | null;
+  /** Portefeuille personnel du compte, distinct ; null s'il n'existe pas ou s'il est le même. */
+  personalWallet: WalletResponse | null;
   walletLoading: boolean;
   setWallet: (wallet: WalletResponse | null) => void;
   refreshWallet: () => Promise<void>;
@@ -40,6 +43,7 @@ export function ConsoleDataProvider({ children }: { children: ReactNode }) {
     null,
   );
   const [wallet, setWallet] = useState<WalletResponse | null>(null);
+  const [personalWallet, setPersonalWallet] = useState<WalletResponse | null>(null);
   const [walletLoading, setWalletLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -57,18 +61,37 @@ export function ConsoleDataProvider({ children }: { children: ReactNode }) {
       const ownerCandidates = Array.from(
         new Set([ctx.actorId ?? me.actorId, me.id].filter(Boolean) as string[]),
       );
-      let walletData: WalletResponse | null = null;
+      let personal: WalletResponse | null = null;
       for (const ownerId of ownerCandidates) {
         try {
-          walletData = await bffGet<WalletResponse>(
+          personal = await bffGet<WalletResponse>(
             `/api/payments/wallets/owner/${ownerId}`,
           );
-          if (walletData) break;
+          if (personal) break;
         } catch {
           // owner suivant
         }
       }
-      setWallet(walletData);
+      // Les achats d'une organisation (plans, packs) sont débités de SON portefeuille : c'est lui
+      // que la console affiche et recharge. On montrait le portefeuille personnel, si bien qu'on
+      // rechargeait un portefeuille et que l'achat en débitait un autre.
+      let organizationWallet: WalletResponse | null = null;
+      if (ctx.organizationId) {
+        try {
+          organizationWallet = await bffGet<WalletResponse>(
+            `/api/payments/wallets/owner/${ctx.organizationId}`,
+          );
+        } catch {
+          // Pas encore de portefeuille d'organisation : la carte du solde propose de le créer.
+        }
+      }
+      if (ctx.organizationId) {
+        setWallet(organizationWallet);
+        setPersonalWallet(personal && personal.id !== organizationWallet?.id ? personal : null);
+      } else {
+        setWallet(personal);
+        setPersonalWallet(null);
+      }
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Impossible de charger le wallet",
@@ -96,6 +119,7 @@ export function ConsoleDataProvider({ children }: { children: ReactNode }) {
         user,
         sessionContext,
         wallet,
+        personalWallet,
         walletLoading,
         setWallet,
         refreshWallet,
