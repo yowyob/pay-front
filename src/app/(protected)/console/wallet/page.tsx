@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useConsoleData } from "@/components/console/console-data-provider";
 import {
   MoneyTransferCard,
@@ -26,36 +26,91 @@ type RechargeResponse = {
   currency: string;
 };
 
+type ReceiveCode = { code: string; expiresAt: string };
+
+function formatRemaining(milliseconds: number): string {
+  const seconds = Math.max(0, Math.floor(milliseconds / 1000));
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+}
+
 /**
- * Identifiant à communiquer pour recevoir un transfert. Il n'était affiché nulle part : le
- * formulaire de transfert demandait l'identifiant du destinataire sans que personne puisse
- * connaître le sien.
+ * Code de réception jetable : valable 10 minutes et pour UN seul transfert. Il remplace
+ * l'identifiant permanent du portefeuille, qui circulait sans pouvoir être révoqué.
  */
-function WalletIdentifier({ walletId }: { walletId: string }) {
+function ReceiveCodePanel({ walletId }: { walletId: string }) {
   const { t } = useLocale();
+  const [receiveCode, setReceiveCode] = useState<ReceiveCode | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (!receiveCode) return;
+    const timer = globalThis.setInterval(() => setNow(Date.now()), 1000);
+    return () => globalThis.clearInterval(timer);
+  }, [receiveCode]);
+
+  const remaining = receiveCode ? Date.parse(receiveCode.expiresAt) - now : 0;
+  const expired = Boolean(receiveCode) && remaining <= 0;
+
+  async function generate() {
+    setBusy(true);
+    try {
+      const issued = await bffPost<ReceiveCode>(
+        `/api/payments/wallets/${encodeURIComponent(walletId)}/receive-codes`,
+      );
+      setReceiveCode(issued);
+      setNow(Date.now());
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : t.walletOps.receiveError);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function copy() {
+    if (!receiveCode) return;
     try {
-      await navigator.clipboard.writeText(walletId);
+      await navigator.clipboard.writeText(receiveCode.code);
       toast.success(t.walletOps.copied);
     } catch {
-      // Presse-papiers refusé (contexte non sécurisé) : l'identifiant reste sélectionnable.
+      // Presse-papiers refusé (contexte non sécurisé) : le code reste lisible et sélectionnable.
     }
   }
 
   return (
-    <div className="yypay:mt-3 yypay:space-y-1">
-      <div className="yypay:text-xs yypay:text-muted-foreground">{t.walletOps.walletId}</div>
-      <div className="yypay:flex yypay:flex-wrap yypay:items-center yypay:gap-2">
-        <code className="yypay:break-all yypay:rounded yypay:bg-muted yypay:px-2 yypay:py-1 yypay:text-xs yypay:text-foreground">
-          {walletId}
-        </code>
-        <Button type="button" variant="outline" size="sm" onClick={copy}>
-          <Copy className="yypay:h-3.5 yypay:w-3.5" aria-hidden="true" />
-          {t.walletOps.copy}
-        </Button>
+    <div className="yypay:mt-4 yypay:space-y-2 yypay:border-t yypay:border-border yypay:pt-4">
+      <div className="yypay:text-sm yypay:font-medium yypay:text-foreground">
+        {t.walletOps.receiveTitle}
       </div>
-      <p className="yypay:text-xs yypay:text-muted-foreground">{t.walletOps.walletIdHint}</p>
+      {receiveCode && !expired ? (
+        <>
+          <div className="yypay:flex yypay:flex-wrap yypay:items-center yypay:gap-2">
+            <code className="yypay:rounded yypay:bg-muted yypay:px-3 yypay:py-1.5 yypay:font-mono yypay:text-lg yypay:tracking-widest yypay:text-foreground">
+              {receiveCode.code}
+            </code>
+            <Button type="button" variant="outline" size="sm" onClick={copy}>
+              <Copy className="yypay:h-3.5 yypay:w-3.5" aria-hidden="true" />
+              {t.walletOps.copy}
+            </Button>
+          </div>
+          <p className="yypay:text-xs yypay:text-muted-foreground" aria-live="polite">
+            {t.walletOps.receiveValidFor(formatRemaining(remaining))}
+          </p>
+        </>
+      ) : (
+        <p className="yypay:text-xs yypay:text-muted-foreground">
+          {expired ? t.walletOps.receiveExpired : t.walletOps.receiveHint}
+        </p>
+      )}
+      <Button
+        type="button"
+        variant={receiveCode && !expired ? "ghost" : "outline"}
+        size="sm"
+        onClick={generate}
+        disabled={busy}
+      >
+        {receiveCode ? t.walletOps.receiveRegenerate : t.walletOps.receiveGenerate}
+      </Button>
     </div>
   );
 }
@@ -158,7 +213,7 @@ export default function WalletPage() {
             {walletLoading ? "…" : formatAmount(balance)}
           </div>
           {wallet?.id ? (
-            <WalletIdentifier walletId={wallet.id} />
+            <ReceiveCodePanel walletId={wallet.id} />
           ) : !walletLoading ? (
             <div className="yypay:mt-2 yypay:space-y-3">
               <p className="yypay:text-sm yypay:text-muted-foreground">
@@ -181,7 +236,7 @@ export default function WalletPage() {
             <div className="yypay:text-2xl yypay:font-semibold yypay:text-foreground">
               {formatAmount(Number(personalWallet.balance ?? 0))}
             </div>
-            <WalletIdentifier walletId={personalWallet.id} />
+            <ReceiveCodePanel walletId={personalWallet.id} />
             <p className="yypay:mt-2 yypay:text-xs yypay:text-muted-foreground">
               {t.walletOps.personalHint}
             </p>
