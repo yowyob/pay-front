@@ -34,7 +34,8 @@ type ChallengeResponse = {
 };
 
 /**
- * Transfert vers un autre portefeuille, en deux temps : le kernel envoie un code au second
+ * Transfert vers le portefeuille désigné par un code de réception jetable (fourni par le
+ * destinataire, valable 10 minutes, un seul transfert), en deux temps : le kernel envoie un code au second
  * facteur, puis le transfert n'est exécuté qu'avec ce code. La source, le montant et le
  * destinataire sont figés une fois le code demandé — les modifier invalide le code côté serveur,
  * donc on verrouille les champs pour éviter un échec incompréhensible.
@@ -42,7 +43,7 @@ type ChallengeResponse = {
 export function MoneyTransferCard({ sources, onDone }: MoneyTransferCardProps) {
   const { t } = useLocale();
   const [sourceId, setSourceId] = useState("");
-  const [targetWalletId, setTargetWalletId] = useState("");
+  const [recipientCode, setRecipientCode] = useState("");
   const [amount, setAmount] = useState("");
   const [reference, setReference] = useState("");
   const [challenge, setChallenge] = useState<ChallengeResponse | null>(null);
@@ -53,7 +54,7 @@ export function MoneyTransferCard({ sources, onDone }: MoneyTransferCardProps) {
     ? sourceId
     : sources[0]?.id;
   const canRequest =
-    Boolean(walletId) && targetWalletId.trim().length > 0 && Number(amount) > 0;
+    Boolean(walletId) && recipientCode.trim().length > 0 && Number(amount) > 0;
 
   async function requestCode() {
     if (!walletId) return;
@@ -62,7 +63,7 @@ export function MoneyTransferCard({ sources, onDone }: MoneyTransferCardProps) {
       const result = await bffPost<ChallengeResponse>(
         `/api/payments/wallets/${walletId}/transfers/challenge`,
         {
-          targetWalletId: targetWalletId.trim(),
+          recipientCode: recipientCode.trim(),
           amount: Number(amount),
           reference: reference.trim() || undefined,
         },
@@ -81,7 +82,7 @@ export function MoneyTransferCard({ sources, onDone }: MoneyTransferCardProps) {
     setBusy(true);
     try {
       await bffPost(`/api/payments/wallets/${walletId}/transfers`, {
-        targetWalletId: targetWalletId.trim(),
+        recipientCode: recipientCode.trim(),
         amount: Number(amount),
         reference: reference.trim() || undefined,
         challengeToken: challenge.challengeToken,
@@ -101,7 +102,7 @@ export function MoneyTransferCard({ sources, onDone }: MoneyTransferCardProps) {
     setChallenge(null);
     setCode("");
     setAmount("");
-    setTargetWalletId("");
+    setRecipientCode("");
     setReference("");
   }
 
@@ -138,11 +139,17 @@ export function MoneyTransferCard({ sources, onDone }: MoneyTransferCardProps) {
           <Label htmlFor="transfer-target">{t.walletOps.transferTarget}</Label>
           <Input
             id="transfer-target"
-            value={targetWalletId}
+            value={recipientCode}
             disabled={Boolean(challenge) || busy}
-            onChange={(event) => setTargetWalletId(event.target.value)}
+            onChange={(event) => setRecipientCode(event.target.value)}
             placeholder={t.walletOps.transferTargetPlaceholder}
+            autoComplete="off"
+            aria-describedby="transfer-target-hint"
+            className="yypay:font-mono yypay:uppercase yypay:tracking-widest"
           />
+          <p id="transfer-target-hint" className="yypay:text-xs yypay:text-muted-foreground">
+            {t.walletOps.transferTargetHint}
+          </p>
         </div>
 
         <div className="yypay:space-y-2">
