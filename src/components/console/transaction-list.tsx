@@ -252,7 +252,8 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
               {t.transactionList.stats.inbound}
             </p>
             <p className="yypay:mt-1 yypay:text-2xl yypay:font-bold yypay:text-emerald-600 yypay:dark:text-emerald-400">
-              +{formatTotal(totals.inbound)}
+              {totals.inbound > 0 ? "+" : ""}
+              {formatTotal(totals.inbound)}
             </p>
           </CardContent>
         </Card>
@@ -263,7 +264,8 @@ export function TransactionList({ walletId, walletName }: TransactionListProps) 
               {t.transactionList.stats.outbound}
             </p>
             <p className="yypay:mt-1 yypay:text-2xl yypay:font-bold yypay:text-rose-600 yypay:dark:text-rose-400">
-              -{formatTotal(totals.outbound)}
+              {totals.outbound > 0 ? "-" : ""}
+              {formatTotal(totals.outbound)}
             </p>
           </CardContent>
         </Card>
