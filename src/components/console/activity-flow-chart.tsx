@@ -1,8 +1,7 @@
 "use client";
 
 import {
-  getActivityDirection,
-  getActivityStatusGroup,
+  getActivitySignedAmount,
   type PaymentActivityItem,
 } from "@/lib/payment-activity";
 import { useMemo, useState } from "react";
@@ -44,8 +43,12 @@ function bucketize(items: PaymentActivityItem[], intlTag: string): Bucket[] {
   const buckets = new Map<string, Bucket>();
 
   for (const item of items) {
-    if (item.amount == null || !item.createdAt) continue;
-    if (getActivityStatusGroup(item.status) !== "success") continue;
+    if (!item.createdAt) continue;
+    // Même règle que les totaux : seuls les mouvements réussis qui touchent le solde du
+    // portefeuille. Un plan payé en mobile money apparaissait ici en sortie de 1 000 XAF alors que
+    // les totaux, à raison, l'ignoraient.
+    const signed = getActivitySignedAmount(item);
+    if (signed === 0) continue;
 
     const parsed = new Date(item.createdAt);
     if (Number.isNaN(parsed.getTime())) continue;
@@ -65,10 +68,10 @@ function bucketize(items: PaymentActivityItem[], intlTag: string): Bucket[] {
       buckets.set(key, bucket);
     }
 
-    if (getActivityDirection(item) === "in") {
-      bucket.inbound += item.amount;
+    if (signed > 0) {
+      bucket.inbound += signed;
     } else {
-      bucket.outbound += item.amount;
+      bucket.outbound += -signed;
     }
   }
 
