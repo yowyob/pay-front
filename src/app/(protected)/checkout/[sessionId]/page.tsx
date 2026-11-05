@@ -26,6 +26,7 @@ type CheckoutView = {
   id: string;
   status: CheckoutStatus;
   merchantName: string;
+  merchantAgencyName?: string | null;
   items: { label: string; description?: string | null; quantity: number; unitAmount: number }[];
   amount: number;
   currency: string;
@@ -87,14 +88,19 @@ export default function CheckoutPage() {
 
   const loadWallets = useCallback(async () => {
     const options: WalletOption[] = [];
-    try {
-      const mine = await bffGet<{ id?: string; balance?: number }>("/api/payments/wallets/mine");
-      if (mine?.id) {
-        options.push({ id: mine.id, label: t.checkout.personalWallet, balance: Number(mine.balance ?? 0) });
+    // Deux essais : juste après la connexion, le premier appel échouait parfois, et seul le
+    // portefeuille de l'organisation — peut-être le vendeur lui-même — restait proposé.
+    for (let attempt = 0; attempt < 2 && options.length === 0; attempt += 1) {
+      try {
+        const mine = await bffGet<{ id?: string; balance?: number }>("/api/payments/wallets/mine");
+        if (mine?.id) {
+          options.push({ id: mine.id, label: t.checkout.personalWallet, balance: Number(mine.balance ?? 0) });
+        }
+      } catch {
+        // Pas encore de portefeuille personnel, ou appel en échec : un second essai.
       }
-    } catch {
-      // Pas encore de portefeuille personnel : le noyau le crée au premier règlement.
     }
+    const personalWalletId = options[0]?.id;
     try {
       const context = await bffGet<SessionContext>("/api/session/context");
       if (context.organizationId) {
@@ -109,7 +115,8 @@ export default function CheckoutPage() {
       // Pas de portefeuille d'organisation, ou pas administrateur : seul le portefeuille personnel paie.
     }
     setWallets(options);
-    setWalletId((current) => current || options[0]?.id || "");
+    // Présélection du seul portefeuille personnel : celui de l'organisation se choisit à la main.
+    setWalletId((current) => current || personalWalletId || "");
   }, [t]);
 
   // Différé hors du rendu de l'effet (règle react-hooks/set-state-in-effect), comme ailleurs dans l'app.
@@ -270,7 +277,11 @@ export default function CheckoutPage() {
           <CardHeader>
             <CardTitle className="yypay:text-xl">{t.checkout.title}</CardTitle>
             <CardDescription>
-              {t.checkout.seller} : <span className="yypay:font-medium yypay:text-foreground">{view.merchantName}</span>
+              {t.checkout.seller} :{" "}
+              <span className="yypay:font-medium yypay:text-foreground">
+                {view.merchantName}
+                {view.merchantAgencyName ? ` — ${view.merchantAgencyName}` : ""}
+              </span>
             </CardDescription>
           </CardHeader>
           <CardContent className="yypay:space-y-5">
@@ -381,7 +392,7 @@ export default function CheckoutPage() {
                 )}
 
                 <div className="yypay:flex yypay:gap-2">
-                  <Button className="yypay:flex-1" onClick={handleBuy} disabled={busy || insufficient}>
+                  <Button className="yypay:flex-1" onClick={handleBuy} disabled={busy || insufficient || !walletId}>
                     {busy && <Loader2 className="yypay:h-4 yypay:w-4 yypay:animate-spin" aria-hidden="true" />}
                     {t.checkout.buy} · {formatAmount(view.amount, view.currency)}
                   </Button>

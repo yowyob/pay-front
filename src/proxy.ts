@@ -1,6 +1,7 @@
 import {
   getAccessTokenCookieName,
   getOrganizationIdCookieName,
+  getRefreshTokenCookieName,
   getTenantIdCookieName,
 } from "@/lib/session-cookies";
 import type { NextRequest } from "next/server";
@@ -62,6 +63,15 @@ export function proxy(request: NextRequest) {
   }
 
   if (!accessToken) {
+    // Jeton d'accès expiré (15 min) mais session encore valable (14 jours) : on la reprend au lieu
+    // de redemander la connexion, puis on revient à la page demandée.
+    if (request.cookies.get(getRefreshTokenCookieName())?.value) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/api/auth/resume";
+      url.search = "";
+      url.searchParams.set("returnTo", `${pathname}${request.nextUrl.search}`);
+      return NextResponse.redirect(url);
+    }
     return redirectKeepingCheckout(request, "/login");
   }
 
