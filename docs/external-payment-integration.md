@@ -64,8 +64,8 @@ Content-Type: application/json
 | `merchantOrganizationId` | oui | Organisation à qui appartient le produit et qui encaisse (son portefeuille est crédité). Toute application validée peut désigner n'importe quelle organisation du tenant. |
 | `merchantAgencyId` | non | Agence de cette organisation qui vend le produit. Elle doit appartenir à l'organisation ; elle est affichée à l'acheteur. L'argent reste versé au portefeuille de l'organisation. |
 | `items` | oui | 1 à 50 lignes ; `quantity` 1 à 10 000 ; `unitAmount` > 0, deux décimales au plus. Le total est calculé par le noyau. |
-| `currency` | non | `XAF` par défaut. |
-| `reference` | non | Votre numéro de commande. **Idempotent** : la même référence renvoie la même session (refus si elle désigne un autre achat). |
+| `currency` | non | `XAF`, seule devise acceptée (les portefeuilles sont en XAF, sans conversion). |
+| `reference` | non | Votre numéro de commande. **Idempotent** : la même référence renvoie la même session (refus si elle désigne un autre achat). Une session annulée ou expirée le reste : pour proposer à nouveau l'achat, utilisez une **nouvelle** référence. |
 | `returnUrl` | non | Adresse **https** publique où renvoyer l'acheteur ; son origine reçoit le `postMessage`. |
 | `webhookUrl` | non | Adresse **https** publique (nom de domaine, pas d'IP ni de réseau interne) avertie à la fin. |
 
@@ -100,7 +100,8 @@ Ou en redirection : `window.location.assign(checkoutUrl)`. À la fin, l'acheteur
 `returnUrl?checkout={id}&status={PAID|CANCELLED|EXPIRED}`.
 
 Si l'acheteur n'est pas connecté sur YowYob Payment, il se connecte (SSO, MFA), choisit son espace,
-puis revient directement sur l'achat.
+puis revient directement sur l'achat. Il doit se connecter dans le **même tenant** que celui de la
+session (`X-Tenant-Id` à la création) ; sinon l'achat lui apparaît introuvable.
 
 ## 3. Ce que voit l'acheteur
 
@@ -124,14 +125,16 @@ GET https://kernel-core.yowyob.com/api/payments/checkout-sessions/{id}
 X-Client-Id / X-Api-Key / X-Tenant-Id
 ```
 
-Ne livrez que si `status` vaut `PAID` et que `amount`, `currency` et `reference` sont ceux attendus.
+Ne livrez que si `status` vaut `PAID` et que `amount`, `currency`, `reference` et
+`merchantOrganizationId` (et `merchantAgencyId` le cas échéant) sont ceux attendus.
 Seule l'application qui a créé la session peut la relire.
 
 ## Erreurs
 
 | Code | HTTP | Sens |
 |---|---|---|
-| `CHECKOUT_INVALID` | 400 | Requête invalide (articles, montants, adresses). |
+| — | 401 | Clé d'application absente, invalide, ou application pas encore validée. |
+| `CHECKOUT_INVALID` | 400 | Requête invalide (articles, montants, devise autre que XAF, adresses, agence hors de l'organisation). |
 | `CHECKOUT_NOT_FOUND` | 404 | Session inconnue (ou d'un autre tenant / d'une autre application). |
 | `CHECKOUT_CLOSED` | 409 | Session déjà réglée, annulée ou expirée. |
 | `PAYMENT_INSUFFICIENT_BALANCE` | 422 | Solde insuffisant (côté acheteur). |
