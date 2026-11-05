@@ -35,7 +35,7 @@ type CheckoutView = {
   expiresAt: string;
 };
 
-type WalletOption = { id: string; label: string; balance: number };
+type WalletOption = { id: string; label: string; balance: number; kind: "personal" | "org" };
 
 type SessionContext = { organizationId: string | null };
 
@@ -94,7 +94,7 @@ export default function CheckoutPage() {
       try {
         const mine = await bffGet<{ id?: string; balance?: number }>("/api/payments/wallets/mine");
         if (mine?.id) {
-          options.push({ id: mine.id, label: t.checkout.personalWallet, balance: Number(mine.balance ?? 0) });
+          options.push({ id: mine.id, label: t.checkout.personalWallet, balance: Number(mine.balance ?? 0), kind: "personal" });
         }
       } catch {
         // Pas encore de portefeuille personnel, ou appel en échec : un second essai.
@@ -108,7 +108,7 @@ export default function CheckoutPage() {
           `/api/payments/wallets/owner/${context.organizationId}`,
         );
         if (org?.id && !options.some((option) => option.id === org.id)) {
-          options.push({ id: org.id, label: t.checkout.organizationWallet, balance: Number(org.balance ?? 0) });
+          options.push({ id: org.id, label: t.checkout.organizationWallet, balance: Number(org.balance ?? 0), kind: "org" });
         }
       }
     } catch {
@@ -380,7 +380,7 @@ export default function CheckoutPage() {
                     <p className="yypay:text-foreground">{t.checkout.insufficient}</p>
                     <div className="yypay:flex yypay:flex-wrap yypay:gap-2">
                       <Button asChild size="sm" variant="outline">
-                        <a href={withBasePath("/console/wallet")} target="_blank" rel="noopener noreferrer">
+                        <a href={withBasePath(`/console/wallet?recharge=${selected?.kind === "org" ? "org" : "personal"}`)} target="_blank" rel="noopener noreferrer">
                           {t.checkout.recharge}
                         </a>
                       </Button>

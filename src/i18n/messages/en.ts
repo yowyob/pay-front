@@ -325,6 +325,7 @@ const en: Messages = {
     organizationWalletName: "Organization wallet",
     createError: "Could not create the wallet",
     rechargeTitle: "Top up",
+    rechargeTarget: "Wallet to top up",
     amountPlaceholder: "Amount (XAF)",
     rechargeCta: "Top up",
     redirecting: "Redirecting…",

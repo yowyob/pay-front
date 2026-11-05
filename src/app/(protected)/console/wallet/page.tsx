@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useConsoleData } from "@/components/console/console-data-provider";
 import {
   MoneyTransferCard,
@@ -11,6 +12,7 @@ import { TransactionList } from "@/components/console/transaction-list";
 import { useLocale } from "@/i18n/locale-provider";
 import { toIntlTag } from "@/i18n/format";
 import { bffPost } from "@/lib/bff-client";
+import { RECHARGE_ORDER_STORAGE_KEY } from "@/lib/bundle-constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -25,6 +27,8 @@ type RechargeResponse = {
   amount: number;
   currency: string;
 };
+
+type RechargeTarget = "org" | "personal";
 
 type ReceiveCode = { code: string; expiresAt: string };
 
@@ -125,8 +129,16 @@ export default function WalletPage() {
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const searchParams = useSearchParams();
 
   const organizationId = sessionContext?.organizationId ?? null;
+  // La caisse renvoie ici avec ?recharge=personal|org selon le portefeuille choisi pour payer,
+  // afin de recharger directement celui-là. Sans organisation active, seul le portefeuille
+  // personnel existe.
+  const [target, setTarget] = useState<RechargeTarget>(
+    searchParams.get("recharge") === "personal" ? "personal" : "org",
+  );
+  const rechargeTarget: RechargeTarget = organizationId ? target : "personal";
   const balance = Number(wallet?.balance ?? 0);
   const formatAmount = (value: number) => `${value.toLocaleString(intlTag)} XAF`;
 
@@ -175,13 +187,17 @@ export default function WalletPage() {
     setError(null);
     setInfo(null);
     try {
-      // Le portefeuille rechargé est celui qu'on affiche : celui de l'organisation active, qui
-      // paie ses achats (créé à la première recharge s'il n'existe pas encore).
+      // Le portefeuille cible (organisation ou personnel) est créé à sa première recharge s'il
+      // n'existe pas encore ; le noyau ne le crédite qu'à la confirmation du paiement.
       const result = await bffPost<RechargeResponse>("/api/wallet/recharge", {
-        scope: organizationId ? "org" : "personal",
-        organizationId: organizationId ?? undefined,
+        scope: rechargeTarget,
+        organizationId: rechargeTarget === "org" ? organizationId ?? undefined : undefined,
         amount: value,
       });
+      if (result.orderId) {
+        // Au retour de MyCoolPay, la console relit cette commande et annonce le résultat.
+        sessionStorage.setItem(RECHARGE_ORDER_STORAGE_KEY, result.orderId);
+      }
       if (result.redirectUrl) {
         // Redirection vers le provider : le kernel créditera le wallet à la confirmation.
         window.location.href = result.redirectUrl;
@@ -248,6 +264,34 @@ export default function WalletPage() {
         <h2 className="yypay:mb-4 yypay:text-lg yypay:font-semibold yypay:text-foreground">
           {t.walletOps.rechargeTitle}
         </h2>
+        {organizationId ? (
+          <fieldset className="yypay:mb-4 yypay:space-y-2">
+            <legend className="yypay:mb-2 yypay:text-sm yypay:text-muted-foreground">
+              {t.walletOps.rechargeTarget}
+            </legend>
+            {(
+              [
+                ["org", t.walletOps.sourceOrganization],
+                ["personal", t.walletOps.sourcePersonal],
+              ] as const
+            ).map(([value, label]) => (
+              <label
+                key={value}
+                className="yypay:flex yypay:cursor-pointer yypay:items-center yypay:gap-2 yypay:text-sm yypay:text-foreground"
+              >
+                <input
+                  type="radio"
+                  name="recharge-target"
+                  value={value}
+                  checked={rechargeTarget === value}
+                  onChange={() => setTarget(value)}
+                  disabled={submitting}
+                />
+                {label}
+              </label>
+            ))}
+          </fieldset>
+        ) : null}
         {error ? (
           <div
             role="alert"
