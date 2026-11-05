@@ -26,6 +26,7 @@ type CheckoutView = {
   id: string;
   status: CheckoutStatus;
   merchantName: string;
+  merchantAgencyName?: string | null;
   items: { label: string; description?: string | null; quantity: number; unitAmount: number }[];
   amount: number;
   currency: string;
@@ -270,7 +271,11 @@ export default function CheckoutPage() {
           <CardHeader>
             <CardTitle className="yypay:text-xl">{t.checkout.title}</CardTitle>
             <CardDescription>
-              {t.checkout.seller} : <span className="yypay:font-medium yypay:text-foreground">{view.merchantName}</span>
+              {t.checkout.seller} :{" "}
+              <span className="yypay:font-medium yypay:text-foreground">
+                {view.merchantName}
+                {view.merchantAgencyName ? ` — ${view.merchantAgencyName}` : ""}
+              </span>
             </CardDescription>
           </CardHeader>
           <CardContent className="yypay:space-y-5">
