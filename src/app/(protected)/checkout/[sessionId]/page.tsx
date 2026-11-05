@@ -112,9 +112,13 @@ export default function CheckoutPage() {
     setWalletId((current) => current || options[0]?.id || "");
   }, [t]);
 
+  // Différé hors du rendu de l'effet (règle react-hooks/set-state-in-effect), comme ailleurs dans l'app.
   useEffect(() => {
-    void loadView();
-    void loadWallets();
+    const timer = globalThis.setTimeout(() => {
+      void loadView();
+      void loadWallets();
+    }, 0);
+    return () => globalThis.clearTimeout(timer);
   }, [loadView, loadWallets]);
 
   const closed = view && view.status !== "OPEN";
