@@ -22,12 +22,42 @@ function resolveBffPath(path: string): string {
   return withBasePath(path);
 }
 
+let refreshInFlight: Promise<boolean> | null = null;
+
+/** Un seul rafraîchissement à la fois, partagé par les appels qui reçoivent un 401 ensemble. */
+function refreshSessionOnce(): Promise<boolean> {
+  refreshInFlight ??= fetch(resolveBffPath("/api/auth/refresh"), {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+  })
+    .then((response) => response.ok)
+    .catch(() => false)
+    .finally(() => {
+      refreshInFlight = null;
+    });
+  return refreshInFlight;
+}
+
+/**
+ * Le jeton d'accès vit 15 min et n'était rafraîchi qu'à intervalle fixe depuis le chargement de
+ * la page : un appel pouvait partir avec un jeton échu (la caisse restait bloquée sur « Acheter »).
+ * Sur un 401, on rafraîchit la session puis on rejoue l'appel une fois.
+ */
+async function fetchWithRefresh(path: string, init: RequestInit): Promise<Response> {
+  const response = await fetch(path, init);
+  if (response.status !== 401 || path.includes("/api/auth/")) {
+    return response;
+  }
+  return (await refreshSessionOnce()) ? fetch(path, init) : response;
+}
+
 export async function bffFetch<T>(
   path: string,
   init?: RequestInit,
 ): Promise<T> {
   const resolvedPath = resolveBffPath(path);
-  const response = await fetch(resolvedPath, {
+  const response = await fetchWithRefresh(resolvedPath, {
     ...init,
     credentials: "include",
     headers: {
@@ -77,7 +107,7 @@ export async function bffPostEnvelope<T>(
   payload?: unknown,
 ): Promise<{ success?: boolean; data?: T; message?: string; errorCode?: string }> {
   const resolvedPath = resolveBffPath(path);
-  const response = await fetch(resolvedPath, {
+  const response = await fetchWithRefresh(resolvedPath, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
