@@ -39,7 +39,13 @@ export function SessionRefreshProvider({
           error instanceof BffError &&
           (error.status === 401 || error.status === 403)
         ) {
-          router.replace("/login");
+          // On garde la page en cours : sur la caisse, l'acheteur doit revenir à son achat.
+          const current = `${window.location.pathname.replace(/^\/pay(?=\/)/, "")}${window.location.search}`;
+          router.replace(
+            current.startsWith("/") && current !== "/login"
+              ? `/login?returnTo=${encodeURIComponent(current)}`
+              : "/login",
+          );
         }
       } finally {
         refreshingRef.current = false;
