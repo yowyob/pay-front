@@ -6,12 +6,28 @@ import {
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-const PUBLIC_PATHS = ["/", "/login", "/tenants", "/organizations", "/direct-payment"];
+const PUBLIC_PATHS = ["/", "/login", "/tenants", "/organizations"];
 
 function redirectTo(request: NextRequest, pathname: string) {
   const url = request.nextUrl.clone();
   url.pathname = pathname;
   url.search = "";
+  return NextResponse.redirect(url);
+}
+
+/**
+ * Caisse ouverte par une plateforme Yowyob : l'acheteur doit y revenir une fois connecté. Le chemin
+ * demandé suit toutes les étapes (connexion, tenant, organisation) dans `returnTo`.
+ */
+function redirectKeepingCheckout(request: NextRequest, pathname: string) {
+  const { pathname: requested, search } = request.nextUrl;
+  if (!requested.startsWith("/checkout/")) {
+    return redirectTo(request, pathname);
+  }
+  const url = request.nextUrl.clone();
+  url.pathname = pathname;
+  url.search = "";
+  url.searchParams.set("returnTo", `${requested}${search}`);
   return NextResponse.redirect(url);
 }
 
@@ -25,7 +41,6 @@ export function proxy(request: NextRequest) {
 
   const isPublic =
     PUBLIC_PATHS.includes(pathname) ||
-    pathname.startsWith("/direct-payment") ||
     pathname.startsWith("/api") ||
     pathname.startsWith("/_next");
 
@@ -47,11 +62,11 @@ export function proxy(request: NextRequest) {
   }
 
   if (!accessToken) {
-    return redirectTo(request, "/login");
+    return redirectKeepingCheckout(request, "/login");
   }
 
   if (!tenantId && pathname !== "/tenants") {
-    return redirectTo(request, "/tenants");
+    return redirectKeepingCheckout(request, "/tenants");
   }
 
   if (tenantId && pathname === "/tenants") {
@@ -63,7 +78,7 @@ export function proxy(request: NextRequest) {
     pathname !== "/organizations" &&
     pathname !== "/tenants"
   ) {
-    return redirectTo(request, "/organizations");
+    return redirectKeepingCheckout(request, "/organizations");
   }
 
   if (organizationId && pathname === "/organizations") {
