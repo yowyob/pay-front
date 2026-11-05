@@ -323,6 +323,7 @@ const fr = {
     organizationWalletName: "Portefeuille de l'organisation",
     createError: "Création du portefeuille impossible",
     rechargeTitle: "Recharger",
+    rechargeTarget: "Portefeuille à recharger",
     amountPlaceholder: "Montant (XAF)",
     rechargeCta: "Recharger",
     redirecting: "Redirection…",
