@@ -563,6 +563,31 @@ const fr = {
     returnNow: "Revenir à la plateforme",
     error: "Paiement impossible pour le moment",
     invalidCode: "Code invalide ou expiré. Demandez un nouveau code.",
+    // Règlement par mobile money : l'acheteur n'a PAS de compte Yowyob, donc ni portefeuille, ni
+    // code de validation. Il paie depuis son téléphone, chez le prestataire.
+    mobileMoney: {
+      title: "Payer par Mobile Money",
+      intro: "Aucun compte Yowyob n'est nécessaire : vous payez depuis votre téléphone.",
+      open: "Payer par Mobile Money",
+      opening: "Ouverture du paiement…",
+      continueToProvider: "Continuer vers Mobile Money",
+      scanHint: "Ou scannez ce code avec votre téléphone.",
+      scanAlt: (amount: string) => `Code à scanner pour payer ${amount}`,
+      waiting: "En attente de votre paiement…",
+      check: "J'ai payé — vérifier",
+      paid: "Paiement reçu. Le vendeur est crédité.",
+      failed: "Paiement refusé. Reprenez depuis la plateforme pour obtenir un nouveau lien.",
+      cancelled: "Paiement annulé.",
+      expired: "Lien de paiement expiré. Reprenez depuis la plateforme.",
+      refundDue:
+        "Vous avez payé, mais l'achat n'était plus à régler : ce montant doit vous être remboursé. Conservez votre référence.",
+      gaveUp:
+        "Plus de vérification automatique après dix minutes. Si vous avez payé, le règlement sera porté de lui-même ; conservez votre référence.",
+      retrying: "La vérification n'a pas abouti. Nouvelle tentative dans quelques secondes.",
+      keepOpen: "Ne fermez pas cette page avant la confirmation : c'est elle qui vérifie le paiement.",
+      walletQuestion: "Vous avez un compte Yowyob ?",
+      walletInstead: "Payer par mon portefeuille",
+    },
   },
   // __INSERT_POINT__
 };

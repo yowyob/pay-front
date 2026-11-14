@@ -9,26 +9,24 @@ import { NextResponse } from "next/server";
 
 const PUBLIC_PATHS = ["/", "/login", "/tenants", "/organizations"];
 
+/**
+ * Règlement d'un achat : PUBLIC, et c'est le cœur de la caisse commune.
+ *
+ * Une plateforme vend à un client de passage, qui n'a pas de compte Yowyob et ne peut donc pas en
+ * franchir la connexion : il règle par mobile money, depuis son téléphone. Exiger une session ici
+ * lui fermait la porte, et exiger en plus un tenant et une organisation la fermait même à un
+ * acheteur connecté qui n'a pas encore choisi de contexte.
+ *
+ * Ce qui tient lieu de garde : l'identifiant de l'achat. Il est imprévisible, à durée limitée, et
+ * vaut invitation — c'est la doctrine du noyau pour tout le parcours invité. Le chemin par
+ * portefeuille, lui, reste derrière la connexion : la page ne le propose qu'à une session établie.
+ */
+const PUBLIC_PREFIXES = ["/checkout/"];
+
 function redirectTo(request: NextRequest, pathname: string) {
   const url = request.nextUrl.clone();
   url.pathname = pathname;
   url.search = "";
-  return NextResponse.redirect(url);
-}
-
-/**
- * Caisse ouverte par une plateforme Yowyob : l'acheteur doit y revenir une fois connecté. Le chemin
- * demandé suit toutes les étapes (connexion, tenant, organisation) dans `returnTo`.
- */
-function redirectKeepingCheckout(request: NextRequest, pathname: string) {
-  const { pathname: requested, search } = request.nextUrl;
-  if (!requested.startsWith("/checkout/")) {
-    return redirectTo(request, pathname);
-  }
-  const url = request.nextUrl.clone();
-  url.pathname = pathname;
-  url.search = "";
-  url.searchParams.set("returnTo", `${requested}${search}`);
   return NextResponse.redirect(url);
 }
 
@@ -42,6 +40,7 @@ export function proxy(request: NextRequest) {
 
   const isPublic =
     PUBLIC_PATHS.includes(pathname) ||
+    PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix)) ||
     pathname.startsWith("/api") ||
     pathname.startsWith("/_next");
 
@@ -72,11 +71,11 @@ export function proxy(request: NextRequest) {
       url.searchParams.set("returnTo", `${pathname}${request.nextUrl.search}`);
       return NextResponse.redirect(url);
     }
-    return redirectKeepingCheckout(request, "/login");
+    return redirectTo(request, "/login");
   }
 
   if (!tenantId && pathname !== "/tenants") {
-    return redirectKeepingCheckout(request, "/tenants");
+    return redirectTo(request, "/tenants");
   }
 
   if (tenantId && pathname === "/tenants") {
@@ -88,7 +87,7 @@ export function proxy(request: NextRequest) {
     pathname !== "/organizations" &&
     pathname !== "/tenants"
   ) {
-    return redirectKeepingCheckout(request, "/organizations");
+    return redirectTo(request, "/organizations");
   }
 
   if (organizationId && pathname === "/organizations") {

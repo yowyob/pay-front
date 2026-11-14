@@ -565,6 +565,31 @@ const en: Messages = {
     returnNow: "Return to the platform",
     error: "Payment unavailable right now",
     invalidCode: "Invalid or expired code. Request a new one.",
+    // Mobile money settlement: the buyer has NO Yowyob account, hence no wallet and no validation
+    // code. They pay from their own phone, at the provider.
+    mobileMoney: {
+      title: "Pay with Mobile Money",
+      intro: "No Yowyob account needed: you pay from your own phone.",
+      open: "Pay with Mobile Money",
+      opening: "Opening the payment…",
+      continueToProvider: "Continue to Mobile Money",
+      scanHint: "Or scan this code with your phone.",
+      scanAlt: (amount: string) => `Code to scan to pay ${amount}`,
+      waiting: "Waiting for your payment…",
+      check: "I have paid — check",
+      paid: "Payment received. The seller has been credited.",
+      failed: "Payment declined. Start again from the platform to get a new link.",
+      cancelled: "Payment cancelled.",
+      expired: "Payment link expired. Start again from the platform.",
+      refundDue:
+        "You paid, but the purchase was no longer payable: this amount must be refunded to you. Keep your reference.",
+      gaveUp:
+        "Automatic checking stops after ten minutes. If you paid, the settlement will be recorded on its own; keep your reference.",
+      retrying: "The check did not go through. Trying again in a few seconds.",
+      keepOpen: "Do not close this page before confirmation: it is what checks the payment.",
+      walletQuestion: "Do you have a Yowyob account?",
+      walletInstead: "Pay with my wallet",
+    },
   },
   // __INSERT_POINT__
 };
