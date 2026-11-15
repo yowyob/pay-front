@@ -11,6 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import MobileMoneyPanel from "@/components/checkout/mobile-money-panel";
 import { toIntlTag } from "@/i18n/format";
 import { useLocale } from "@/i18n/locale-provider";
 import { BffError, bffGet, bffPost } from "@/lib/bff-client";
@@ -37,7 +38,7 @@ type CheckoutView = {
 
 type WalletOption = { id: string; label: string; balance: number; kind: "personal" | "org" };
 
-type SessionContext = { organizationId: string | null };
+type SessionContext = { authenticated?: boolean; organizationId: string | null };
 
 type Challenge = { challengeToken: string; codePreview?: string | null };
 
@@ -55,8 +56,14 @@ function returnOrigin(returnUrl?: string | null): string | null {
 
 /**
  * Caisse commune des plateformes Yowyob. La plateforme a créé l'achat côté serveur (prix compris) ;
- * l'acheteur, connecté en SSO, le règle par son portefeuille ou l'annule. La plateforme est ensuite
- * prévenue : message à la fenêtre qui a ouvert la caisse, ou retour sur son adresse.
+ * l'acheteur le règle, puis la plateforme est prévenue : message à la fenêtre qui a ouvert la
+ * caisse, ou retour sur son adresse.
+ *
+ * <p>Deux acheteurs, deux chemins. Celui qui a un compte Yowyob paie par son portefeuille, avec un
+ * code de validation. Celui qui n'en a pas — un client de passage — paie par mobile money depuis
+ * son téléphone : cette page est donc PUBLIQUE. Elle était protégée, et un acheteur sans compte se
+ * heurtait à un écran de connexion qu'il ne pouvait pas franchir, alors que l'identifiant de
+ * l'achat vaut déjà invitation (imprévisible et à durée limitée).</p>
  */
 export default function CheckoutPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -70,6 +77,8 @@ export default function CheckoutPage() {
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [countdown, setCountdown] = useState(RETURN_DELAY_SECONDS);
+  /** `null` tant qu'on ne sait pas : on n'affiche alors aucun des deux chemins de règlement. */
+  const [connected, setConnected] = useState<boolean | null>(null);
 
   const formatAmount = (value: number, currency: string) =>
     `${Number(value).toLocaleString(intlTag)} ${currency}`;
@@ -87,6 +96,14 @@ export default function CheckoutPage() {
   }, [sessionId, t]);
 
   const loadWallets = useCallback(async () => {
+    const context = await bffGet<SessionContext>("/api/session/context").catch(() => null);
+    const authenticated = Boolean(context?.authenticated);
+    setConnected(authenticated);
+    if (!authenticated) {
+      // Acheteur sans compte Yowyob : aucun portefeuille à lui proposer, et rien à aller chercher.
+      setWallets([]);
+      return;
+    }
     const options: WalletOption[] = [];
     // Deux essais : juste après la connexion, le premier appel échouait parfois, et seul le
     // portefeuille de l'organisation — peut-être le vendeur lui-même — restait proposé.
@@ -102,8 +119,7 @@ export default function CheckoutPage() {
     }
     const personalWalletId = options[0]?.id;
     try {
-      const context = await bffGet<SessionContext>("/api/session/context");
-      if (context.organizationId) {
+      if (context?.organizationId) {
         const org = await bffGet<{ id?: string; balance?: number }>(
           `/api/payments/wallets/owner/${context.organizationId}`,
         );
@@ -348,6 +364,10 @@ export default function CheckoutPage() {
               </form>
             ) : (
               <>
+                {/* Le portefeuille ne vaut que pour un acheteur connecté : lui seul en a un, et
+                    lui seul peut recevoir le code de validation. */}
+                {connected ? (
+                  <>
                 <fieldset className="yypay:space-y-2">
                   <legend className="yypay:mb-2 yypay:text-sm yypay:font-medium yypay:text-foreground">
                     {t.checkout.payWith}
@@ -396,10 +416,40 @@ export default function CheckoutPage() {
                     {busy && <Loader2 className="yypay:h-4 yypay:w-4 yypay:animate-spin" aria-hidden="true" />}
                     {t.checkout.buy} · {formatAmount(view.amount, view.currency)}
                   </Button>
+                  {/* Annuler engage l'achat de la plateforme : réservé à l'acheteur identifié.
+                      Un visiteur anonyme qui renonce ferme la page, et l'achat expire seul. */}
                   <Button variant="outline" onClick={handleCancel} disabled={busy}>
                     {t.checkout.cancel}
                   </Button>
                 </div>
+                  </>
+                ) : null}
+
+                {/* Mobile money : ouvert aux deux acheteurs. Celui qui a un compte peut préférer
+                    payer par téléphone plutôt que de recharger son portefeuille. */}
+                {connected === null ? null : (
+                  <MobileMoneyPanel
+                    sessionId={view.id}
+                    amount={view.amount}
+                    currency={view.currency}
+                    formatAmount={formatAmount}
+                    onSettled={loadView}
+                  />
+                )}
+
+                {connected === false ? (
+                  <p className="yypay:text-center yypay:text-xs yypay:text-muted-foreground">
+                    {t.checkout.mobileMoney.walletQuestion}{" "}
+                    <a
+                      className="yypay:font-medium yypay:text-primary yypay:underline"
+                      href={withBasePath(
+                        `/login?returnTo=${encodeURIComponent(`/checkout/${view.id}`)}`,
+                      )}
+                    >
+                      {t.checkout.mobileMoney.walletInstead}
+                    </a>
+                  </p>
+                ) : null}
               </>
             )}
           </CardContent>
