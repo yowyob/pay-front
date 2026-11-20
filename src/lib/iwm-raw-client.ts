@@ -41,3 +41,19 @@ export async function getIwmJson(
   const data = text.trim() ? (JSON.parse(text) as unknown) : null;
   return { data, response };
 }
+
+/** DELETE vers le kernel pour une route absente des types générés (même en-têtes que {@link postIwmJson}). */
+export async function deleteIwmJson(
+  request: Request,
+  path: string,
+): Promise<{ data: unknown; response: Response }> {
+  const { baseUrl } = getIwmEnv();
+  const response = await fetch(`${baseUrl}${path}`, {
+    method: "DELETE",
+    headers: new Headers(buildIwmRequestHeaders(request)),
+  });
+
+  const text = await response.text();
+  const data = text.trim() ? (JSON.parse(text) as unknown) : null;
+  return { data, response };
+}
