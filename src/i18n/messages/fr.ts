@@ -362,6 +362,32 @@ const fr = {
     withdrawalConfirm: "Confirmer le retrait",
     withdrawalSuccess: "Retrait envoyé.",
     withdrawalError: "Le retrait a échoué",
+    withdrawalTo: "Vers le numéro",
+    payoutNumbersDescription:
+      "Vers un de vos numéros mobile money vérifiés. Chaque numéro est confirmé une fois par un code reçu par SMS.",
+    payoutNumbersTitle: "Vos numéros de retrait",
+    payoutNumbersEmpty: "Aucun numéro enregistré pour l'instant.",
+    payoutNumberRequired:
+      "Ajoutez votre numéro mobile money et confirmez-le avec le code reçu par SMS avant votre premier retrait.",
+    payoutNumberAddTitle: "Ajouter un numéro",
+    payoutNumberPhone: "Numéro mobile money",
+    payoutNumberSendCode: "Recevoir un code par SMS",
+    payoutNumberCodeSent: "Code envoyé par SMS sur ce numéro.",
+    payoutNumberAlreadyVerified: "Ce numéro est déjà vérifié.",
+    payoutNumberAddError: "Le numéro n'a pas pu être ajouté",
+    payoutNumberCodeLabel: "Code reçu par SMS",
+    payoutNumberCodeHint: "Le code est valable 10 minutes. 5 essais au plus.",
+    payoutNumberResendHint:
+      "Code perdu ou expiré ? Ajoutez de nouveau ce numéro pour recevoir un nouveau code.",
+    payoutNumberVerify: "Confirmer le numéro",
+    payoutNumberVerified: "Numéro vérifié : vous pouvez y retirer de l'argent.",
+    payoutNumberVerifyError: "Le numéro n'a pas pu être confirmé",
+    payoutNumberResend: "Renvoyer le code",
+    payoutNumberPending: "À confirmer",
+    payoutNumberVerifiedBadge: "Vérifié",
+    payoutNumberRemove: "Retirer ce numéro",
+    payoutNumberRemoved: "Numéro retiré.",
+    payoutNumberRemoveError: "Le numéro n'a pas pu être retiré",
   },
   onboarding: {
     steps: [

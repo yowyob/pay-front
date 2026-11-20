@@ -364,6 +364,32 @@ const en: Messages = {
     withdrawalConfirm: "Confirm the withdrawal",
     withdrawalSuccess: "Withdrawal sent.",
     withdrawalError: "The withdrawal failed",
+    withdrawalTo: "To the number",
+    payoutNumbersDescription:
+      "To one of your verified mobile money numbers. Each number is confirmed once with a code sent by SMS.",
+    payoutNumbersTitle: "Your withdrawal numbers",
+    payoutNumbersEmpty: "No number saved yet.",
+    payoutNumberRequired:
+      "Add your mobile money number and confirm it with the code sent by SMS before your first withdrawal.",
+    payoutNumberAddTitle: "Add a number",
+    payoutNumberPhone: "Mobile money number",
+    payoutNumberSendCode: "Get a code by SMS",
+    payoutNumberCodeSent: "Code sent by SMS to this number.",
+    payoutNumberAlreadyVerified: "This number is already verified.",
+    payoutNumberAddError: "The number could not be added",
+    payoutNumberCodeLabel: "Code received by SMS",
+    payoutNumberCodeHint: "The code is valid for 10 minutes. 5 attempts at most.",
+    payoutNumberResendHint:
+      "Lost or expired code? Add this number again to get a new code.",
+    payoutNumberVerify: "Confirm the number",
+    payoutNumberVerified: "Number verified: you can withdraw to it.",
+    payoutNumberVerifyError: "The number could not be confirmed",
+    payoutNumberResend: "Resend the code",
+    payoutNumberPending: "To confirm",
+    payoutNumberVerifiedBadge: "Verified",
+    payoutNumberRemove: "Remove this number",
+    payoutNumberRemoved: "Number removed.",
+    payoutNumberRemoveError: "The number could not be removed",
   },
   onboarding: {
     steps: [
