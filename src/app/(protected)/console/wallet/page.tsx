@@ -8,6 +8,7 @@ import {
   type TransferSource,
 } from "@/components/console/money-transfer-card";
 import { MoneyWithdrawalCard } from "@/components/console/money-withdrawal-card";
+import { FrozenFundsNote } from "@/components/console/frozen-funds-note";
 import { TransactionList } from "@/components/console/transaction-list";
 import { useLocale } from "@/i18n/locale-provider";
 import { toIntlTag } from "@/i18n/format";
@@ -229,6 +230,9 @@ export default function WalletPage() {
             {walletLoading ? "…" : formatAmount(balance)}
           </div>
           {wallet?.id ? (
+            <FrozenFundsNote walletId={wallet.id} balance={balance} formatAmount={formatAmount} />
+          ) : null}
+          {wallet?.id ? (
             <ReceiveCodePanel walletId={wallet.id} />
           ) : !walletLoading ? (
             <div className="yypay:mt-2 yypay:space-y-3">
@@ -252,6 +256,11 @@ export default function WalletPage() {
             <div className="yypay:text-2xl yypay:font-semibold yypay:text-foreground">
               {formatAmount(Number(personalWallet.balance ?? 0))}
             </div>
+            <FrozenFundsNote
+              walletId={personalWallet.id}
+              balance={Number(personalWallet.balance ?? 0)}
+              formatAmount={formatAmount}
+            />
             <ReceiveCodePanel walletId={personalWallet.id} />
             <p className="yypay:mt-2 yypay:text-xs yypay:text-muted-foreground">
               {t.walletOps.personalHint}

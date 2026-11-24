@@ -312,6 +312,12 @@ const fr = {
     copy: "Copier",
     copied: "Code copié",
     personalTitle: "Votre portefeuille personnel",
+    frozenSummary: (frozen: string, available: string) => `Dont ${frozen} gelés · ${available} disponibles`,
+    frozenHint:
+      "Argent reçu pour un achat payé à l'avance : il vous sera débloqué, ou rendu à l'acheteur, par la plateforme qui a vendu.",
+    frozenLine: (amount: string, date: string) => `${amount} gelés depuis le ${date}`,
+    frozenRefundOn: (date: string) => `rendu à l'acheteur le ${date} sans décision`,
+    frozenReleaseOn: (date: string) => `débloqué le ${date} sans décision`,
     personalHint:
       "Distinct de celui de l'organisation. Pour payer ses achats : générez un code de réception sur le portefeuille de l'organisation, puis transférez depuis celui-ci.",
     transferSource: "Depuis",
