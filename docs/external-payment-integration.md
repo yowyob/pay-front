@@ -129,6 +129,49 @@ Ne livrez que si `status` vaut `PAID` et que `amount`, `currency`, `reference` e
 `merchantOrganizationId` (et `merchantAgencyId` le cas échéant) sont ceux attendus.
 Seule l'application qui a créé la session peut la relire.
 
+## 5. Paiement à l'avance : geler les fonds
+
+Pour une commande livrée plus tard, demandez que l'argent arrive **gelé** chez le vendeur : il le
+voit, mais ne peut pas l'utiliser tant que **vous** ne l'avez pas décidé. YowYob Payment ne décide
+rien à votre place.
+
+À la création de la session, ajoutez :
+
+```json
+"hold": { "enabled": true, "expiresInSeconds": 172800, "expiryAction": "REFUND" }
+```
+
+`expiresInSeconds` et `expiryAction` (`RELEASE` ou `REFUND`) sont facultatifs et vont ensemble : à
+l'échéance, comptée depuis le paiement, ce qui reste gelé est dégelé ou rendu automatiquement.
+Sans échéance, le gel attend votre décision.
+
+Ensuite, quand vous le décidez (mêmes en-têtes `X-Client-Id` / `X-Api-Key` / `X-Tenant-Id`) :
+
+```http
+GET  https://kernel-core.yowyob.com/api/payments/checkout-sessions/{id}/hold
+POST https://kernel-core.yowyob.com/api/payments/checkout-sessions/{id}/hold/release
+POST https://kernel-core.yowyob.com/api/payments/checkout-sessions/{id}/hold/refund
+POST https://kernel-core.yowyob.com/api/payments/checkout-sessions/{id}/hold/settle
+```
+
+| Appel | Quand | Corps |
+|---|---|---|
+| `release` | L'acheteur confirme la réception : le vendeur peut utiliser l'argent. | aucun (tout), ou `{ "amount": 7000 }` |
+| `refund` | La commande est annulée : l'argent revient dans le portefeuille de l'acheteur. | aucun (tout), ou `{ "amount": 3000 }` |
+| `settle` | Vous avez tranché un litige : une part au vendeur, une part rendue, en une fois. | `{ "releaseAmount": 7000, "refundAmount": 3000 }` |
+
+Les décisions partielles s'additionnent jusqu'à épuiser le gel ; deux décisions simultanées ne
+peuvent jamais sortir plus que le montant gelé. Réponse : le gel, avec `amount`, `releasedAmount`,
+`refundedAmount`, `remainingAmount`, `status` (`ACTIVE` puis `CLOSED`) et `refundable`.
+
+**Acheteur sans compte** (réglé par mobile money) : le montant net est gelé de la même façon, mais il
+n'a pas de portefeuille où le rendre : `refundable` vaut `false` et `refund` répond 409. Dégelez, ou
+remboursez-le par un autre moyen ; une échéance `REFUND` ne s'applique pas à ce cas.
+
+Erreurs propres au gel : `SETTLEMENT_NOT_FOUND` (404 : pas de gel, ou session d'une autre
+application), `SETTLEMENT_CONFLICT` (409 : montant au-delà de ce qui reste, gel déjà soldé, renvoi
+impossible), `SETTLEMENT_INVALID` (400).
+
 ## Erreurs
 
 | Code | HTTP | Sens |

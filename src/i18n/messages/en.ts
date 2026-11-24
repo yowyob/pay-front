@@ -314,6 +314,12 @@ const en: Messages = {
     copy: "Copy",
     copied: "Code copied",
     personalTitle: "Your personal wallet",
+    frozenSummary: (frozen: string, available: string) => `Including ${frozen} frozen · ${available} available`,
+    frozenHint:
+      "Money received for a purchase paid in advance: the platform that sold it will release it to you or return it to the buyer.",
+    frozenLine: (amount: string, date: string) => `${amount} frozen since ${date}`,
+    frozenRefundOn: (date: string) => `returned to the buyer on ${date} without a decision`,
+    frozenReleaseOn: (date: string) => `released on ${date} without a decision`,
     personalHint:
       "Separate from the organization's. To pay for its purchases: generate a receive code on the organization's wallet, then transfer from this one.",
     transferSource: "From",
